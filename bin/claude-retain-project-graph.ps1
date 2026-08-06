@@ -1,5 +1,4 @@
-﻿# Wrapper para construir/actualizar el graph del proyecto
-# Se asegura de que PYTHONPATH incluya el directorio del plugin
+# Wrapper PowerShell para consultar el graph semántico del proyecto
 
 $pluginDir = ""
 if ($env:CLAUDE_PLUGIN_ROOT) {
@@ -11,7 +10,7 @@ else {
         (Get-Location).Path
     )
     foreach ($dir in $knownPaths) {
-        if (Test-Path "$dir\claude_retain\cli.py") {
+        if (Test-Path "$dir\claude_retain\project_graph.py") {
             $pluginDir = $dir
             break
         }
@@ -29,10 +28,8 @@ if (-not (Get-Command $pythonExe -ErrorAction SilentlyContinue)) {
     $pythonExe = "python"
 }
 
-# Pasar el resto de los argumentos al CLI
-$args = if ($args.Count -gt 0) { $args } else { @("build-graph") }
+# Pasar el resto de los argumentos al CLI del project graph
+$args = if ($args.Count -gt 0) { $args } else { @() }
 $PYTHONPATH = "$pluginDir;$env:PYTHONPATH"
-$cmdArgs = @("-c", "import sys; sys.path.insert(0, r'$pluginDir'); from claude_retain.cli import main; main()", "build-graph") + $args
-& $pythonExe @cmdArgs
-
-
+$cmdArgs = @("bin\claude-retain-project-graph.py") + $args
+& $pythonExe $cmdArgs

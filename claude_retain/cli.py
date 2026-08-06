@@ -31,7 +31,8 @@ def main():
     elif cmd == "llm-cache-clear":
         clear_llm_cache()
     elif cmd == "build-graph":
-        build_project_graph()
+        auto = "--auto" in sys.argv or "-a" in sys.argv
+        build_project_graph(auto=auto)
     elif cmd == "scope-checker":
         check_scope()
     elif cmd == "checkpoints":
@@ -185,10 +186,11 @@ def clear_llm_cache():
     cache.clear_expired()
     print("Cache LLM limpiado (entradas expiradas eliminadas)")
 
-def build_project_graph(files=None):
+def build_project_graph(files=None, auto=False):
     """Construir/actualizar el graph del proyecto para archivos especificados.
 
-    Si no se pasan archivos, muestra los archivos disponibles y pide confirmación.
+    Si no se pasan archivos, muestra los archivos disponibles y pide confirmación,
+    a menos que auto=True — entonces reconstruye todo automáticamente.
     """
     from claude_retain.project_graph import ProjectGraphManager
 
@@ -237,46 +239,52 @@ def build_project_graph(files=None):
             except Exception:
                 pass
 
-        # Preguntar si reconstruir todo
-        print("\n  Opciones:")
-        print("    [1] Reconstruir TODO el graph (todos los archivos)")
-        print("    [2] Solo archivos seleccionados — ingresa nombres separados por coma")
-        print("    [3] Cancelar")
-
-        try:
-            choice = input("\n  Elige una opción (1/2/3): ").strip()
-        except (EOFError, KeyboardInterrupt):
-            print("\n  Cancelado")
-            return
-
-        if choice == "1":
-            print("\n[claude-retain] Reconstruyendo graph completo...")
+        # Auto: reconstruir todo sin preguntar
+        if auto:
+            print("\n[claude-retain] Auto-mode — reconstruyendo graph completo...")
             result = pm.build_graph(project_root)
             print(f"[claude-retain] OK — nodes={result['nodes_created']}, edges={result['edges_created']}")
-        elif choice == "2":
+        else:
+            # Preguntar si reconstruir todo
+            print("\n  Opciones:")
+            print("    [1] Reconstruir TODO el graph (todos los archivos)")
+            print("    [2] Solo archivos seleccionados — ingresa nombres separados por coma")
+            print("    [3] Cancelar")
+
             try:
-                selected = input("  Archivos (separados por coma, sin espacios): ").strip()
-                if not selected:
-                    print("  Sin archivos seleccionados — cancelado")
-                    return
-                files_list = [f.strip() for f in selected.split(",")]
-                # Validar que los archivos existen
-                valid_files = []
-                for rel_path in files_list:
-                    abs_path = os.path.join(project_root, rel_path)
-                    if os.path.isfile(abs_path):
-                        valid_files.append(rel_path)
-                    else:
-                        print(f"  ⚠ Archivo no encontrado: {rel_path}")
-                if valid_files:
-                    result = pm.incremental_update(valid_files, project_root)
-                    print(f"[claude-retain] OK — {len(valid_files)} archivo(s) actualizados, {result['edges_updated']} aristas")
-                else:
-                    print("  Ningún archivo válido seleccionado — cancelado")
+                choice = input("\n  Elige una opción (1/2/3): ").strip()
             except (EOFError, KeyboardInterrupt):
                 print("\n  Cancelado")
-        else:
-            print("  Cancelado")
+                return
+
+            if choice == "1":
+                print("\n[claude-retain] Reconstruyendo graph completo...")
+                result = pm.build_graph(project_root)
+                print(f"[claude-retain] OK — nodes={result['nodes_created']}, edges={result['edges_created']}")
+            elif choice == "2":
+                try:
+                    selected = input("  Archivos (separados por coma, sin espacios): ").strip()
+                    if not selected:
+                        print("  Sin archivos seleccionados — cancelado")
+                        return
+                    files_list = [f.strip() for f in selected.split(",")]
+                    # Validar que los archivos existen
+                    valid_files = []
+                    for rel_path in files_list:
+                        abs_path = os.path.join(project_root, rel_path)
+                        if os.path.isfile(abs_path):
+                            valid_files.append(rel_path)
+                        else:
+                            print(f"  ⚠ Archivo no encontrado: {rel_path}")
+                    if valid_files:
+                        result = pm.incremental_update(valid_files, project_root)
+                        print(f"[claude-retain] OK — {len(valid_files)} archivo(s) actualizados, {result['edges_updated']} aristas")
+                    else:
+                        print("  Ningún archivo válido seleccionado — cancelado")
+                except (EOFError, KeyboardInterrupt):
+                    print("\n  Cancelado")
+            else:
+                print("  Cancelado")
 
     pm.close()
 

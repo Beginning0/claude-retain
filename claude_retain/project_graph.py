@@ -407,15 +407,15 @@ class ProjectGraphManager:
             col = get_collection(palace_path=os.path.expanduser("~/.claude-retain/palace"))
             if not col:
                 return []
-            results = col.search(query=query, n_results=n_results)
-            # Formatear resultados
+            results = col.query(query_texts=[query], n_results=n_results)
+            # Formatear resultados (distancias convertidas a similitud por palace)
             formatted = []
-            for hit in results.get("hits", []):
+            for i in range(len(results.get("ids", [[]])[0])):
                 formatted.append({
                     "type": "semantic",
-                    "similarity": hit.get("similarity", 0),
-                    "source": hit.get("source_file", "?"),
-                    "text": hit.get("text", ""),
+                    "similarity": results.get("distances", [[float('inf')]])[0][i],
+                    "source": results.get("metadatas", [[{}]])[0][i].get("source_file", "?") if results.get("metadatas") and results.get("metadatas")[0] else "?",
+                    "text": results.get("documents", [[]])[0][i] if results.get("documents") and results.get("documents")[0] else "",
                 })
             return formatted
         except Exception as e:
