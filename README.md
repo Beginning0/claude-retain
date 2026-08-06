@@ -78,16 +78,45 @@ Sesión cruda (500+ interacciones)
 
 ## Instalación
 
-### Opción A: Desde marketplace local
+### Opción A: Desde marketplace de GitHub (recomendado)
 
-1. Agrega al `.claude/settings.json`:
+1. Agrega el marketplace al `.claude/settings.json` de Claude Code:
+
+```json
+"extraKnownMarketplaces": {
+  "claude-retain": {
+    "source": {
+      "source": "github",
+      "repo": "Beginning0/claude-marketplace"
+    }
+  }
+}
+```
+
+2. Reinicia Claude Code y ejecuta:
+
+```bash
+/plugin marketplace add Beginning0/claude-marketplace
+/plugin install claude-retain@claude-retain
+```
+
+3. Instala las dependencias de Python desde el directorio clonado:
+
+```powershell
+cd $env:USERPROFILE\.claude\plugins\cache\claude-retain\claude-retain\0.1.1
+pip install -e .
+```
+
+### Opción B: Desde marketplace local (directorio)
+
+1. Agrega al `.claude/settings.json` de Claude Code:
 
 ```json
 "extraKnownMarketplaces": {
   "claude-retain-local": {
     "source": {
       "source": "directory",
-      "path": "G:\\Agentes\\Plugin_agente"
+      "path": "C:\\ruta\\a\\tu\\clon\\claude-retain"
     }
   }
 }
@@ -101,28 +130,62 @@ Sesión cruda (500+ interacciones)
 }
 ```
 
-3. Instala dependencias:
+3. Instala las dependencias de Python:
 
 ```powershell
-cd G:\Agentes\Plugin_agente
+cd C:\ruta\a\tu\clon\G--Agentes-Plugin-agente
 pip install -e .
 ```
 
-### Opción B: Copia manual de plugins
+### Opción C: Instalación manual
 
-1. Clona o descarga el repositorio
-2. Copia la carpeta al directorio de plugins de Claude Code:
+1. Clona el repositorio:
 
 ```powershell
-# Windows
-Copy-Item -Recurse Plugin_agente "$env:USERPROFILE\.claude\plugins\claude-retain"
+git clone https://github.com/Beginning0/claude-retain.git
+```
+
+2. Agrega al `.claude/settings.json` de Claude Code (el path debe apuntar a donde clonaste):
+
+```json
+"extraKnownMarketplaces": {
+  "claude-retain-local": {
+    "source": {
+      "source": "directory",
+      "path": "C:\\ruta\\a\\tu\\clon\\claude-retain"
+    }
+  }
+},
+"enabledPlugins": {
+  "claude-retain@claude-retain-local": true
+}
+```
+
+3. Instala las dependencias de Python:
+
+```powershell
+cd C:\ruta\a\tu\clon\G--Agentes-Plugin-agente
+pip install -e .
 ```
 
 ### Dependencias
 
-```bash
-pip install chromadb llama-cpp-python mempalace
+El plugin requiere las siguientes dependencias de Python:
+
+| Dependencia | Descripción | Notas |
+|-------------|-------------|-------|
+| `chromadb` | Base de datos vectorial para embeddings | Instalable vía pip |
+| `sentence-transformers` | Modelo de embeddings (all-MiniLM-L6-v2) | Instalable vía pip |
+| `llama-cpp-python` | Inferencia local con llama.cpp | Requiere compilación C/C++ — [instrucciones](https://github.com/abetlen/llama-cpp-python#installation) |
+| `mempalace` | Memoria persistente en memoria RAM | Instalable vía pip |
+
+**Nota:** `llama-cpp-python` es la dependencia más problemática. Si no la necesitás para compresión de sesiones, podes instalar sin ella:
+
+```powershell
+pip install chromadb sentence-transformers mempalace
 ```
+
+Y usar solo el cache LLM y memoria persistente sin compresión con llama.cpp.
 
 ## Uso
 
@@ -228,16 +291,3 @@ El plugin usa hooks.d/ para eventos específicos:
 - **spawn_guard** → Previene consolidación concurrente (mismo archivo lock)
 - **slug** → Genera nombres basados en contenido (SHA-256 hash), no timestamps aleatorios
 
-## Mejoras de claude-remember integradas
-
-El plugin fue mejorado con ideas de [claude-remember](https://github.com/Digital-Process-Tools/claude-remember):
-
-| Feature | Antes | Después |
-|---------|-------|---------|
-| Compresión de sesiones | ❌ No tenía | ✅ Auto-compression con LLM local |
-| Hooks granulares | 4 hooks genéricos | 12 hooks.d/ por evento específico |
-| Auto-save | Solo en Stop | Por umbral de herramientas (≥3) |
-| Nombres de archivos | Timestamps aleatorios | Slugs basados en contenido (SHA-256) |
-| Consolidación | ❌ No tenía | ✅ Diarios → Semanales → Archivos |
-| Lock concurrente | ❌ No tenía | ✅ spawn_guard (evita corrupción) |
-| Modelo de compresión | Depende de Haiku | Haiku primero, fallback a local (detecta automáticamente) |
