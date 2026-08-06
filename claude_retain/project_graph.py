@@ -396,12 +396,78 @@ class ProjectGraphManager:
 
     # ──────── query_semantic — ChromaDB ────────
 
+    def _ensure_chroma_indexed(self) -> bool:
+        """Indexar archivos del proyecto en ChromaDB si no están ya.
+
+        Compara el hash del proyecto actual con los documentos ya indexados.
+        Retorna True si los archivos fueron indexados (o ya estaban), False si
+        no se pudo conectar con ChromaDB.
+        """
+        try:
+            from .palace import get_collection
+            col = get_collection(palace_path=os.path.expanduser("~/.claude-retain/palace"))
+            if not col:
+                return False
+
+            # Verificar si ya hay documentos de ESTE proyecto
+            project_hash = hashlib.md5(self.project_root.encode()).hexdigest()[:8]
+            existing = col.get(limit=100)
+            ids = existing.get("ids", [])
+            if not ids:
+                pass  # ChromaDB vacío — necesita indexar
+            else:
+                # Verificar si alguno de los IDs indexados corresponde a este proyecto
+                for doc_id in ids:
+                    if doc_id.startswith(project_hash):
+                        return True  # Ya indexado para este proyecto
+                # Documentos existentes son de otro proyecto — limpiar y reindexar
+                col.delete(ids=ids)
+
+        except Exception:
+            pass  # Error al verificar — proceder a indexar
+
+        # Indexar archivos del proyecto en ChromaDB
+        try:
+            from .palace import get_collection
+            col = get_collection(palace_path=os.path.expanduser("~/.claude-retain/palace"))
+            if not col:
+                return False
+
+            files = self._scan_files(self.project_root)
+            if not files:
+                return False
+
+            # Leer contenido de archivos y preparar para embedding
+            documents = []
+            ids = []
+            metadatas = []
+            for fpath, rel_path in files:
+                try:
+                    with open(fpath, "r", encoding="utf-8", errors="replace") as f:
+                        content = f.read(6000)  # Primeros 6KB como resumen semántico
+                    documents.append(content)
+                    ids.append(f"{project_hash}_{rel_path}")
+                    metadatas.append({"source_file": rel_path, "file_type": Path(fpath).suffix})
+                except Exception:
+                    continue
+
+            if documents:
+                col.add(documents=documents, ids=ids, metadatas=metadatas)
+                return True
+            return False
+        except Exception:
+            return False
+
     def query_semantic(self, query: str, n_results: int = 5) -> List[Dict]:
         """Buscar en ChromaDB semánticamente.
 
+        Indexa archivos del proyecto automáticamente si ChromaDB está vacío.
         Usa claude-retain.palace.get_collection() para buscar archivos/módulos
         relevantes por similitud semántica.
         """
+        # Auto-indexar si ChromaDB está vacío
+        self._ensure_chroma_indexed()
+
         try:
             from .palace import get_collection
             col = get_collection(palace_path=os.path.expanduser("~/.claude-retain/palace"))
