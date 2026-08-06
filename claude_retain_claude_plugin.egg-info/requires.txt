@@ -1,0 +1,3 @@
+chromadb
+llama-cpp-python
+mempalace

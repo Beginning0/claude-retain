@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "claude-retain-claude-plugin"
+version = "0.1.1"
+description = "Memoria persistente con 4 capas y cache de respuestas LLM para Claude Code"
+authors = [
+    {name = "Shado Terro"}
+]
+requires-python = ">=3.9"
+dependencies = [
+    "chromadb",
+    "sentence-transformers",
+    "llama-cpp-python",
+    "mempalace",
+]
+
+[project.scripts]
+claude-retain = "claude_retain.cli:main"
+
+# Incluir explícitamente los subpackages (setuptools no los descubre automáticamente)
+[tool.setuptools.packages.find]
+include = ["claude_retain*", "llm_cache", "memory_hub", "auto_permission"]
+

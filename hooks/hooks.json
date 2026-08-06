@@ -1,0 +1,71 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume|clear|compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks.d/before_session_start/claude-retain-before-session-start.sh\"",
+            "commandWindows": "powershell -ExecutionPolicy Bypass -File \"${CLAUDE_PLUGIN_ROOT}\\hooks.d\\before_session_start\\claude-retain-before-session-start.ps1\"",
+            "timeout": 10,
+            "statusMessage": "Loading compressed memory..."
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/claude-retain-scope-check.sh\"",
+            "commandWindows": "powershell -ExecutionPolicy Bypass -File \"${CLAUDE_PLUGIN_ROOT}\\hooks\\claude-retain-scope-check.ps1\"",
+            "timeout": 10,
+            "statusMessage": "Checking variable scope before write..."
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Read",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/bin/claude-retain-post-read\"",
+            "commandWindows": "powershell -ExecutionPolicy Bypass -File \"${CLAUDE_PLUGIN_ROOT}\\bin\\claude-retain-post-read.ps1\"",
+            "timeout": 10,
+            "statusMessage": "Building project graph after read..."
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks.d/after_post_tool/claude-retain-after-post-tool.sh\"",
+            "commandWindows": "powershell -ExecutionPolicy Bypass -File \"${CLAUDE_PLUGIN_ROOT}\\hooks.d\\after_post_tool\\claude-retain-after-post-tool.ps1\"",
+            "timeout": 10,
+            "statusMessage": "Auto-saving session..."
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks.d/before_save/claude-retain-before-save.sh\"",
+            "commandWindows": "powershell -ExecutionPolicy Bypass -File \"${CLAUDE_PLUGIN_ROOT}\\hooks.d\\before_save\\claude-retain-before-save.ps1\"",
+            "timeout": 30,
+            "statusMessage": "Compressing session before stop..."
+          }
+        ]
+      }
+    ]
+  }
+}

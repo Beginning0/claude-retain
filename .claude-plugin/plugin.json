@@ -1,0 +1,27 @@
+{
+  "name": "claude-retain",
+  "version": "0.1.1",
+  "description": "Memoria persistente con 4 capas (L0-L3), cache de respuestas LLM y auto-permission para Claude Code. Ahorra tokens y recuerda conversaciones pasadas.",
+  "author": {
+    "name": "Shado Terro"
+  },
+  "repository": "https://github.com/Digital-Process-Tools/G--Agentes-Plugin-agente",
+  "skills": [
+    "./skills/agent-orchestration",
+    "./skills/loop-orchestration",
+    "./skills/graph-orchestration",
+    "./skills/claude-retain-eval",
+    "./skills/claude-retain-stats",
+    "./skills/claude-retain-search",
+    "./skills/claude-retain-layers",
+    "./skills/claude-retain-graph",
+    "./skills/claude-retain-llm-cache-stats",
+    "./skills/claude-retain-llm-cache-clear",
+    "./skills/project-graph",
+    "./skills/read-first-graph",
+    "./skills/project-knowledge-hub",
+    "./skills/debug-first-graph",
+    "./skills/memory-time-travel"
+  ]
+}
+

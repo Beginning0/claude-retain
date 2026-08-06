@@ -1,0 +1,28 @@
+#!/bin/bash
+# Wrapper para mostrar estado de las 4 capas de memoria
+if command -v mempalace &>/dev/null; then
+    exec mempalace layers "$@"
+fi
+
+PLUGIN_DIR=""
+if [ -n "${CLAUDE_PLUGIN_ROOT}" ]; then
+    PLUGIN_DIR="${CLAUDE_PLUGIN_ROOT}"
+elif [ -d "$PWD/.claude-plugin" ]; then
+    PLUGIN_DIR="$PWD"
+else
+    for dir in \
+        "$HOME/.claude/plugins/mempalace" \
+        "${CLAUDE_PLUGIN_ROOT:-.}"; do
+        if [ -d "$dir" ] && [ -f "$dir/mempalace_plugin/cli.py" ]; then
+            PLUGIN_DIR="$dir"
+            break
+        fi
+    done
+fi
+
+if [ -z "$PLUGIN_DIR" ]; then
+    echo "[mempalace] ERROR: No se encontró el directorio del plugin."
+    exit 1
+fi
+
+PYTHONPATH="${PLUGIN_DIR}:${PYTHONPATH}" exec python3 -m mempalace_plugin.cli layers "$@"

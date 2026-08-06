@@ -1,0 +1,88 @@
+#!/bin/bash
+# Hook Startup — Descubre herramientas disponibles al iniciar sesión y registra en MemPalace L0
+
+PLUGIN_DIR=""
+if [ -n "${CLAUDE_PLUGIN_ROOT}" ]; then
+    PLUGIN_DIR="${CLAUDE_PLUGIN_ROOT}"
+elif [ -d "$PWD/.claude-plugin" ]; then
+    PLUGIN_DIR="$PWD"
+else
+    for dir in \
+        "$HOME/.claude/plugins/mempalace" \
+        "${CLAUDE_PLUGIN_ROOT:-.}"; do
+        if [ -d "$dir" ] && [ -f "$dir/mempalace_plugin/cli.py" ]; then
+            PLUGIN_DIR="$dir"
+            break
+        fi
+    done
+fi
+
+if [ -z "$PLUGIN_DIR" ]; then
+    exit 0
+fi
+
+TOOLS_FILE="$HOME/.mempalace/tools_available.md"
+TOOLS_DIR=$(dirname "$TOOLS_FILE")
+mkdir -p "$TOOLS_DIR"
+
+TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+
+echo "[mempalace] Startup - descubriendo herramientas..."
+
+# Descubrir skills instaladas como .skill files
+SKILLS=""
+if [ -d "$HOME/.claude/skills" ]; then
+    SKILLS=$(ls "$HOME/.claude/skills"/*.skill 2>/dev/null | while read f; do echo "  - $(basename "$f")"; done)
+fi
+
+# Descubrir skills del plugin.json
+PLUGIN_SKILLS=""
+if [ -f "$PLUGIN_DIR/.claude-plugin/plugin.json" ]; then
+    PLUGIN_SKILLS=$(python3 -c "
+import json
+try:
+    config = json.load(open('$PLUGIN_DIR/.claude-plugin/plugin.json'))
+    for skill in config.get('skills', []):
+        print(f'  - {skill}')
+except:
+    pass
+" 2>/dev/null)
+fi
+
+# Descubrir skills de MemPalace
+MEMPALACE_SKILLS=""
+if [ -d "$PLUGIN_DIR/skills" ]; then
+    MEMPALACE_SKILLS=$(ls -d "$PLUGIN_DIR/skills"/ 2>/dev/null | while read d; do echo "  - $(basename "$d")"; done)
+fi
+
+# Descubrir MCP servers
+MCP_SERVERS=""
+if [ -f "$HOME/.claude/settings.json" ]; then
+    MCP_SERVERS=$(python3 -c "
+import json
+try:
+    with open('$HOME/.claude/settings.json') as f:
+        config = json.load(f)
+    for server in config.get('mcpServers', {}).keys():
+        print(f'  - {server}')
+except:
+    pass
+" 2>/dev/null)
+fi
+
+# Escribir en MemPalace L0
+cat > "$TOOLS_FILE" <<EOF
+---
+discovered_at: $TIMESTAMP
+skills_installed:
+$SKILLS
+plugin_skills:
+$PLUGIN_SKILLS
+mempalace_skills:
+$MEMPALACE_SKILLS
+mcp_servers:
+$MCP_SERVERS
+---
+EOF
+
+echo "[mempalace] Startup - herramientas descubiertas y registradas en MemPalace"

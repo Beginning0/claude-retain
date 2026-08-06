@@ -1,0 +1,4 @@
+auto_permission
+claude_retain
+llm_cache
+memory_hub

@@ -1,0 +1,2 @@
+[console_scripts]
+claude-retain = claude_retain.cli:main

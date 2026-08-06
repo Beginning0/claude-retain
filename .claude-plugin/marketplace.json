@@ -1,0 +1,22 @@
+{
+  "name": "claude-retain",
+  "description": "claude-retain plugin for Claude Code",
+  "owner": {
+    "name": "Shado Terro"
+  },
+  "plugins": [
+    {
+      "name": "claude-retain",
+      "description": "Memoria persistente con 4 capas (L0-L3), cache de respuestas LLM y auto-permission para Claude Code. Ahorra tokens y recuerda conversaciones pasadas.",
+      "version": "0.1.1",
+      "source": {
+        "source": "github",
+        "repo": "Digital-Process-Tools/G--Agentes-Plugin-agente"
+      },
+      "author": {
+        "name": "Shado Terro"
+      }
+    }
+  ]
+}
+

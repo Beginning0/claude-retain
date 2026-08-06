@@ -1,0 +1,19 @@
+# Data directories (created at runtime)
+__pycache__/
+*.pyc
+*.pyo
+
+# claude-retain data
+~/.claude-retain/
+
+# Python
+.venv/
+venv/
+.env/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Generated files (not source)
+2026-*.txt

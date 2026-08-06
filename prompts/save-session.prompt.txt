@@ -1,0 +1,10 @@
+## {{TIME}} | {{BRANCH}}
+[Una oración: qué se hizo. Sé específico — menciona archivos, MR o issues.]
+
+Reglas:
+- La primera línea debe ser exactamente `## {{TIME}} | {{BRANCH}}`.
+- "**ONE sentence only. Short and specific.**" (Una sola oración, corta y específica).
+- Aplica compresión no destructiva (ej. "conf" por "configuration").
+- Elimina palabras de relleno.
+- Sin texto introductorio ni bloques markdown.
+- Usa SKIP si no hay progreso nuevo o trabajo sustantivo.

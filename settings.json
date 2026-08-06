@@ -1,0 +1,106 @@
+{
+  "version": "0.1.0",
+  "description": "Plugin Claude Code — claude-retain + LLM Cache para memoria persistente y ahorro de tokens",
+
+  "claude-retain": {
+    "enabled": true,
+    "palace_path": "~/.claude-retain/palace",
+    "kg_path": "~/.claude-retain/knowledge_graph.sqlite3",
+    "auto_save_memory": true,
+    "max_essential_story_tokens": 800
+  },
+
+  "llm_cache": {
+    "enabled": true,
+    "memory_max_size": 500,
+    "default_ttl": 86400
+  },
+
+  "auto_permission": {
+    "enabled": true,
+    "max_backup_size_mb": 50,
+    "backup_retention_days": 7,
+    "categories": {
+      "read": {
+        "allowed": true,
+        "description": "Lectura de archivos — siempre permitido"
+      },
+      "safe_write": {
+        "allowed": true,
+        "description": "Escritura segura (crear/editar archivos) — siempre permitido"
+      },
+      "dangerous": {
+        "allowed": true,
+        "auto_backup": true,
+        "description": "Operaciones peligrosas (borrar/mover/renombrar) — permitido con backup automático"
+      },
+      "destructive": {
+        "allowed": false,
+        "description": "Operaciones destructivas (borrar directorios, chmod) — requieren confirmación manual"
+      }
+    }
+  },
+
+  "commands": {
+    "claude-retain_stats": {
+      "trigger": "!claude-retain stats",
+      "description": "Mostrar estadísticas de memoria"
+    },
+    "claude-retain_search": {
+      "trigger": "!claude-retain search <query>",
+      "description": "Buscar en memoria persistente"
+    },
+    "claude-retain_layers": {
+      "trigger": "!claude-retain layers",
+      "description": "Mostrar estado de las capas L0-L3"
+    },
+    "claude-retain_graph": {
+      "trigger": "!claude-retain graph [entity]",
+      "description": "Mostrar grafo de conocimiento"
+    },
+    "llm_cache_stats": {
+      "trigger": "!claude-retain llm-cache stats",
+      "description": "Mostrar estadísticas del cache LLM"
+    },
+    "llm_cache_clear": {
+      "trigger": "!claude-retain llm-cache clear",
+      "description": "Limpiar cache LLM"
+    },
+    "claude-retain_build_graph": {
+      "trigger": "!claude-retain build-graph",
+      "description": "Construir/actualizar el graph del proyecto — sin argumentos muestra archivos y pide confirmación"
+    },
+    "claude-retain_knowledge_hub": {
+      "trigger": "!claude-retain knowledge-hub",
+      "description": "Hub de conocimiento del proyecto — muestra cuánto sabe el graph sobre cada archivo"
+    },
+    "claude-retain_debug_graph": {
+      "trigger": "!claude-retain debug-first-graph",
+      "description": "Debug: consultar graph antes de leer archivos, usar sub-agentes en paralelo"
+    },
+    "claude-retain_checkpoints": {
+      "trigger": "!claude-retain checkpoints",
+      "description": "Listar checkpoints de memoria (Time-Travel Debugging)"
+    },
+    "claude-retain_rewind": {
+      "trigger": "!claude-retain rewind <checkpoint_id>",
+      "description": "Restaurar memoria a un checkpoint anterior"
+    },
+    "claude-retain_branch": {
+      "trigger": "!claude-retain branch --from=<checkpoint_id> --name=<nombre>",
+      "description": "Crear bifurcación de memoria para probar soluciones"
+    },
+    "claude-retain_replay": {
+      "trigger": "!claude-retain replay <checkpoint_id>",
+      "description": "Ver recuerdos de un checkpoint sin restaurar (Time-Travel Debugging)"
+    }
+  },
+
+  "skill_triggers": {
+    "memory-time-travel": {
+      "trigger": "/memory-time-travel",
+      "description": "Activar Time-Travel Debugging — rewind, replay y branch de memoria"
+    }
+  }
+}
+
