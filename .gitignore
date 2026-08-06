@@ -11,6 +11,10 @@ __pycache__/
 venv/
 .env/
 
+# Claude Code local settings
+.claude/settings.local.json
+.claude/settings.local.json.example
+
 # OS files
 .DS_Store
 Thumbs.db
