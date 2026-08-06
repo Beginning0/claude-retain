@@ -1,4 +1,4 @@
-﻿# Wrapper PowerShell para mostrar grafo de conocimiento temporal
+# Wrapper PowerShell para mostrar grafo de conocimiento temporal
 
 $pluginDir = ""
 if ($env:CLAUDE_PLUGIN_ROOT) {
@@ -29,6 +29,6 @@ if (-not (Get-Command $pythonExe -ErrorAction SilentlyContinue)) {
 }
 
 $args = if ($args.Count -gt 0) { $args } else { @() }
-$PYTHONPATH = $PYTHONPATH; & $pythonExe -c "import sys; sys.path.insert(0, r'$pluginDir'); from claude_retain.cli import main; main()" graph @args
-
-
+# Usar CLAUDE_PLUGIN_PATH para evitar expansión de variables de PowerShell
+$env:CLAUDE_PLUGIN_PATH = $pluginDir
+& $pythonExe "-c" "from claude_retain.cli import main; main()" graph @args

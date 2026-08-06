@@ -1,4 +1,4 @@
-﻿# Wrapper para construir/actualizar el graph del proyecto
+# Wrapper para construir/actualizar el graph del proyecto
 # Se asegura de que PYTHONPATH incluya el directorio del plugin
 
 $pluginDir = ""
@@ -30,9 +30,11 @@ if (-not (Get-Command $pythonExe -ErrorAction SilentlyContinue)) {
 }
 
 # Pasar el resto de los argumentos al CLI
-$args = if ($args.Count -gt 0) { $args } else { @("build-graph") }
-$PYTHONPATH = "$pluginDir;$env:PYTHONPATH"
-$cmdArgs = @("-c", "import sys; sys.path.insert(0, r'$pluginDir'); from claude_retain.cli import main; main()", "build-graph") + $args
-& $pythonExe @cmdArgs
-
-
+# Usar CLAUDE_PLUGIN_PATH para evitar expansión de variables de PowerShell
+$env:CLAUDE_PLUGIN_PATH = $pluginDir
+if ($args.Count -gt 0) {
+    & $pythonExe "-c" "from claude_retain.cli import main; main()" "build-graph" @args
+}
+else {
+    & $pythonExe "-c" "from claude_retain.cli import main; main()" "build-graph"
+}

@@ -98,10 +98,11 @@ class PalaceCollection:
             )
 
         # Convertir distancias coseno a similitud
+        # Cosine distance va de 0 a 2: 0=identico, 1=ortogonal, 2=opuesto
         if results.get("distances"):
             for i in range(len(results["distances"])):
                 for j in range(len(results["distances"][i])):
-                    results["distances"][i][j] = max(0.0, 1.0 - results["distances"][i][j])
+                    results["distances"][i][j] = max(0.0, 1.0 - (results["distances"][i][j] / 2.0))
 
         return results
 

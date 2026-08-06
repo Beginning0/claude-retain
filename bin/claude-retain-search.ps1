@@ -1,4 +1,4 @@
-﻿# Wrapper PowerShell para buscar en memoria persistente
+# Wrapper PowerShell para buscar en memoria persistente
 
 $pluginDir = ""
 if ($env:CLAUDE_PLUGIN_ROOT) {
@@ -29,6 +29,5 @@ if (-not (Get-Command $pythonExe -ErrorAction SilentlyContinue)) {
 }
 
 $args = if ($args.Count -gt 0) { $args } else { @("search") }
-$PYTHONPATH = $PYTHONPATH; & $pythonExe -c "import sys; sys.path.insert(0, r'$pluginDir'); from claude_retain.cli import main; main()" search @args
-
-
+$env:CLAUDE_PLUGIN_PATH = $pluginDir
+& $pythonExe "-c" "from claude_retain.cli import main; main()" search @args

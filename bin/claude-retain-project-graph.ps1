@@ -30,6 +30,5 @@ if (-not (Get-Command $pythonExe -ErrorAction SilentlyContinue)) {
 
 # Pasar el resto de los argumentos al CLI del project graph
 $args = if ($args.Count -gt 0) { $args } else { @() }
-$PYTHONPATH = "$pluginDir;$env:PYTHONPATH"
-$cmdArgs = @("bin\claude-retain-project-graph.py") + $args
-& $pythonExe $cmdArgs
+$env:CLAUDE_PLUGIN_PATH = $pluginDir
+& $pythonExe "bin\claude-retain-project-graph.py" @args
