@@ -5,7 +5,7 @@
   "author": {
     "name": "Shado Terro"
   },
-  "repository": "https://github.com/Digital-Process-Tools/G--Agentes-Plugin-agente",
+  "repository": "https://github.com/Beginning0/claude-retain",
   "skills": [
     "./skills/agent-orchestration",
     "./skills/loop-orchestration",
