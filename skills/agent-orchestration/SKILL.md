@@ -12,16 +12,16 @@ Antes de iniciar cualquier tarea compleja, **siempre** verifica si el graph del 
 
 ```bash
 # Verificar si hay graph
-./bin/claude-retain-graph.ps1 overview   # PowerShell
-./bin/claude-retain-graph overview        # Bash
+./bin/claude-retain-project-graph.ps1 overview   # PowerShell
+./bin/claude-retain-project-graph overview        # Bash
 
-# Si no existe, construirlo
-./bin/claude-retain-build-graph.ps1    # PowerShell
-./bin/claude-retain-build-graph         # Bash
+# Si no existe, construirlo automáticamente
+./bin/claude-retain-build-graph.ps1 --auto    # PowerShell
+./bin/claude-retain-build-graph --auto         # Bash
 
 # Consultar el graph para contexto
-./bin/claude-retain-graph.ps1 query_structural "archivo.js"   # PowerShell
-./bin/claude-retain-graph query_structural "archivo.js"        # Bash
+./bin/claude-retain-project-graph.ps1 query_structural "archivo.js"   # PowerShell
+./bin/claude-retain-project-graph query_structural "archivo.js"        # Bash
 ```
 
 ## Orquestación de Agentes
@@ -49,9 +49,9 @@ Cuando la tarea lo requiera, usa el Workflow tool para crear sub-agentes que tra
 Antes de decidir el modo, descubre qué herramientas están disponibles:
 
 ```bash
-# Ejecutar descubrimiento
-./bin/claude-retain-build-graph.ps1  # PowerShell — también construye el graph
-./bin/claude-retain-build-graph       # Bash
+# Ejecutar descubrimiento y construir graph automáticamente
+./bin/claude-retain-build-graph.ps1 --auto  # PowerShell
+./bin/claude-retain-build-graph --auto       # Bash
 ```
 
 Registra en claude-retain lo encontrado para futuras referencias:
@@ -102,8 +102,8 @@ Si ya leíste información y el graph la indexó, **NO vuelvas a leer**. El hook
 
 ```bash
 # En vez de volver a leer bot.js:
-./bin/claude-retain-graph.ps1 query_structural "bot.js"   # PowerShell
-./bin/claude-retain-graph query_structural "bot.js"        # Bash
+./bin/claude-retain-project-graph.ps1 query_structural "bot.js"   # PowerShell
+./bin/claude-retain-project-graph query_structural "bot.js"        # Bash
 # → Devuelve imports, definiciones, relaciones SIN leer el archivo
 ```
 
@@ -131,7 +131,7 @@ Reglas para output directo y accionable:
 ### Ejemplo: output correcto vs incorrecto
 
 ❌ Mal: "Voy a buscar las referencias a signalSide en todo el proyecto para ver dónde está causando el error. Primero voy a construir el graph del proyecto..."
-✅ Bien: `./bin/claude-retain-graph.ps1 query_structural "signalSide" → 3 archivos, 5 referencias`
+✅ Bien: `./bin/claude-retain-project-graph.ps1 query_structural "signalSide" → 3 archivos, 5 referencias`
 
 ❌ Mal: "En resumen, encontramos que hay 2 archivos con problemas y vamos a arreglarlos"
 ✅ Bien: `Fix: 1. signalSide en bot.js (línea 42)  2. obCrossWallContra en analyzer.js (línea 87)`

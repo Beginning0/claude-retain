@@ -11,13 +11,13 @@ Cuando un error aparece (ej: `signalSide is not defined`), **siempre** sigue est
 ### Paso 1 — Construir/verificar el graph del proyecto
 
 ```bash
-# Si no existe o está vacío — construirlo
-./bin/claude-retain-build-graph.ps1    # PowerShell
-./bin/claude-retain-build-graph         # Bash
+# Si no existe o está vacío — construirlo automáticamente
+./bin/claude-retain-build-graph.ps1 --auto    # PowerShell
+./bin/claude-retain-build-graph --auto         # Bash
 
 # Verificar qué sabe el graph sobre el archivo
-./bin/claude-retain-graph.ps1 query_structural "bot.js"   # PowerShell
-./bin/claude-retain-graph query_structural "bot.js"        # Bash
+./bin/claude-retain-project-graph.ps1 query_structural "bot.js"   # PowerShell
+./bin/claude-retain-project-graph query_structural "bot.js"        # Bash
 ```
 
 ### Paso 2 — Buscar el error en memoria antes de leer
@@ -53,10 +53,10 @@ const results = await parallel([
 
 ```bash
 # ¿Qué archivos importan bot.js?
-./bin/claude-retain-graph.ps1 query_structural "bot.js" | imported_by
+./bin/claude-retain-project-graph.ps1 query_structural "bot.js" | imported_by
 
 # ¿Qué funciones se definen en bot.js?
-./bin/claude-retain-graph.ps1 query_structural "bot.js" | defines
+./bin/claude-retain-project-graph.ps1 query_structural "bot.js" | defines
 ```
 
 ### Paso 5 — Solo si necesitas más detalle, leer archivos específicos

@@ -12,29 +12,29 @@ Muestra un resumen de todo lo que el graph del proyecto conoce, organizado por a
 
 **1. Hub completo — overview de todo el conocimiento:**
 ```bash
-# Sin argumentos — muestra archivos disponibles y estado del graph
-./bin/claude-retain-build-graph.ps1    # PowerShell (Windows)
-./bin/claude-retain-build-graph         # Bash (Linux/Mac)
+# Reconstruye TODO el graph sin pedir confirmación
+./bin/claude-retain-build-graph.ps1 --auto    # PowerShell (Windows)
+./bin/claude-retain-build-graph --auto         # Bash (Linux/Mac)
 ```
 
 **2. Query estructural de un archivo específico:**
 ```bash
-./bin/claude-retain-graph.ps1 query_structural "bot.js"   # PowerShell
-./bin/claude-retain-graph query_structural "bot.js"        # Bash
+./bin/claude-retain-project-graph.ps1 query_structural "bot.js"   # PowerShell
+./bin/claude-retain-project-graph query_structural "bot.js"        # Bash
 # Muestra: imports, definiciones, relaciones de este archivo
 ```
 
 **3. Query semántico — buscar por concepto:**
 ```bash
-./bin/claude-retain-graph.ps1 query_semantic "autenticación"   # PowerShell
-./bin/claude-retain-graph query_semantic "autenticación"        # Bash
+./bin/claude-retain-project-graph.ps1 query_semantic "autenticación"   # PowerShell
+./bin/claude-retain-project-graph query_semantic "autenticación"        # Bash
 # Devuelve archivos relevantes por similitud semántica
 ```
 
 **4. Overview del proyecto completo:**
 ```bash
-./bin/claude-retain-graph.ps1 overview   # PowerShell
-./bin/claude-retain-graph overview        # Bash
+./bin/claude-retain-project-graph.ps1 overview   # PowerShell
+./bin/claude-retain-project-graph overview        # Bash
 # Muestra: nodos, aristas, tipo de proyecto, cruxes
 ```
 
@@ -70,8 +70,8 @@ Si un archivo no aparece en los resultados, puede significar:
 
 ```bash
 # ¿Cuánto sabe el graph sobre bot.js?
-./bin/claude-retain-graph.ps1 query_structural "bot.js"   # PowerShell
-./bin/claude-retain-graph query_structural "bot.js"        # Bash
+./bin/claude-retain-project-graph.ps1 query_structural "bot.js"   # PowerShell
+./bin/claude-retain-project-graph query_structural "bot.js"        # Bash
 
 # Resultado esperado:
 #   Nodo: bot.js (file)
@@ -82,8 +82,8 @@ Si un archivo no aparece en los resultados, puede significar:
 #   Queries: 3 consultas previas
 
 # ¿Qué archivos son relevantes para "pagos"?
-./bin/claude-retain-graph.ps1 query_semantic "pagos"   # PowerShell
-./bin/claude-retain-graph query_semantic "pagos"        # Bash
+./bin/claude-retain-project-graph.ps1 query_semantic "pagos"   # PowerShell
+./bin/claude-retain-project-graph query_semantic "pagos"        # Bash
 
 # Resultado esperado:
 #   [semantic] similitud=0.892 — bot.js

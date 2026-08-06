@@ -18,9 +18,9 @@ Usa el graph del proyecto ANTES de leer archivos cuando:
 **Primero asegúrate de que el graph esté construido:**
 
 ```bash
-# Sin argumentos — muestra archivos y pide confirmación (interactivo)
-./bin/claude-retain-build-graph.ps1    # PowerShell (Windows)
-./bin/claude-retain-build-graph         # Bash (Linux/Mac)
+# Reconstruye TODO el graph automáticamente (sin pedir confirmación)
+./bin/claude-retain-build-graph.ps1 --auto    # PowerShell (Windows)
+./bin/claude-retain-build-graph --auto         # Bash (Linux/Mac)
 
 # Con archivos específicos — actualiza solo esos
 ./bin/claude-retain-build-graph.ps1 bot.js config.js  # PowerShell
@@ -31,20 +31,20 @@ Usa el graph del proyecto ANTES de leer archivos cuando:
 
 ```bash
 # Query semántico (ChromaDB)
-./bin/claude-retain-graph.ps1 query_semantic "qué hace la autenticación"   # PowerShell
-./bin/claude-retain-graph query_semantic "qué hace la autenticación"        # Bash
+./bin/claude-retain-project-graph.ps1 query_semantic "qué hace la autenticación"   # PowerShell
+./bin/claude-retain-project-graph query_semantic "qué hace la autenticación"        # Bash
 
 # Query estructural (SQLite)
-./bin/claude-retain-graph.ps1 query_structural "bot.js"   # PowerShell
-./bin/claude-retain-graph query_structural "bot.js"        # Bash
+./bin/claude-retain-project-graph.ps1 query_structural "bot.js"   # PowerShell
+./bin/claude-retain-project-graph query_structural "bot.js"        # Bash
 
 # Overview del proyecto
-./bin/claude-retain-graph.ps1 overview   # PowerShell
-./bin/claude-retain-graph overview        # Bash
+./bin/claude-retain-project-graph.ps1 overview   # PowerShell
+./bin/claude-retain-project-graph overview        # Bash
 
 # Verificar si necesita compactación
-./bin/claude-retain-graph.ps1 check_compact   # PowerShell
-./bin/claude-retain-graph check_compact        # Bash
+./bin/claude-retain-project-graph.ps1 check_compact   # PowerShell
+./bin/claude-retain-project-graph check_compact        # Bash
 ```
 
 ## Qué devuelve el graph
@@ -64,8 +64,8 @@ El graph se compacta automáticamente cuando:
 Puedes verificar si necesita compactar con:
 
 ```bash
-./bin/claude-retain-graph.ps1 check_compact   # PowerShell
-./bin/claude-retain-graph check_compact        # Bash
+./bin/claude-retain-project-graph.ps1 check_compact   # PowerShell
+./bin/claude-retain-project-graph check_compact        # Bash
 ```
 
 ## Flujo recomendado

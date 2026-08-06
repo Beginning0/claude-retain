@@ -12,16 +12,16 @@ Antes de ejecutar `Read()` para cualquier archivo, **siempre** sigue este flujo:
 
 ```bash
 # Query semántico: ¿qué sabe el graph sobre este archivo/tarea?
-./bin/claude-retain-graph.ps1 query_semantic "bot.js"   # PowerShell (Windows)
-./bin/claude-retain-graph query_semantic "bot.js"        # Bash (Linux/Mac)
+./bin/claude-retain-project-graph.ps1 query_semantic "bot.js"   # PowerShell (Windows)
+./bin/claude-retain-project-graph query_semantic "bot.js"        # Bash (Linux/Mac)
 
 # Query estructural: imports, dependencias, relaciones
-./bin/claude-retain-graph.ps1 query_structural "bot.js"   # PowerShell
-./bin/claude-retain-graph query_structural "bot.js"        # Bash
+./bin/claude-retain-project-graph.ps1 query_structural "bot.js"   # PowerShell
+./bin/claude-retain-project-graph query_structural "bot.js"        # Bash
 
 # Overview rápido del proyecto
-./bin/claude-retain-graph.ps1 overview   # PowerShell
-./bin/claude-retain-graph overview        # Bash
+./bin/claude-retain-project-graph.ps1 overview   # PowerShell
+./bin/claude-retain-project-graph overview        # Bash
 ```
 
 ### Paso 2 — Decide según el resultado
@@ -34,36 +34,28 @@ Antes de ejecutar `Read()` para cualquier archivo, **siempre** sigue este flujo:
 
 ### Paso 3 — Construir/actualizar graph con `build-graph`
 
-**Para preparar el proyecto antes de trabajar:**
+**Para preparar el proyecto antes de trabajar (auto-mode):**
 ```bash
-# Sin argumentos — muestra archivos disponibles y pide confirmación
-./bin/claude-retain-build-graph.ps1    # PowerShell
-./bin/claude-retain-build-graph         # Bash
+# Reconstruye TODO el graph sin pedir confirmación
+./bin/claude-retain-build-graph.ps1 --auto    # PowerShell
+./bin/claude-retain-build-graph --auto         # Bash
 
-# Para archivos específicos
+# Para archivos específicos (también auto)
 ./bin/claude-retain-build-graph.ps1 bot.js utils.js  # PowerShell
 ./bin/claude-retain-build-graph bot.js utils.js       # Bash
 ```
 
 **Ejemplo de interacción:**
-```
-[claude-retain] Archivos disponibles para indexar (42 total):
-
-  .js: 28 archivo(s)
-    -> bot.js, config.js, helpers.js (+25 más)
-
-  .ts: 10 archivo(s)
-    -> index.ts, types.ts (+8 más)
-
-  ⚡ Graph existente: 15 nodos, 42 archivos sin cambios recientes
-
-  Opciones:
-    [1] Reconstruir TODO el graph (todos los archivos)
-    [2] Solo archivos seleccionados — ingresa nombres separados por coma
-    [3] Cancelar
-
-  Elige una opción (1/2/3): 1
+```bash
+# Construir graph completo (sin confirmación)
+./bin/claude-retain-build-graph.ps1 --auto
 [claude-retain] OK — nodes=42, edges=87
+
+# Actualizar solo archivos que cambiaron
+./bin/claude-retain-build-graph.ps1 bot.js config.js
+[claude-retain] Graph actualizado para 2 archivo(s):
+  ✓ bot.js — 3 aristas
+  ✓ config.js — 2 aristas
 ```
 
 **Para actualizar solo archivos que cambiaron:**
