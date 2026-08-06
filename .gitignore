@@ -21,3 +21,6 @@ Thumbs.db
 
 # Generated files (not source)
 2026-*.txt
+
+# Local reference files (not for sharing)
+INSTALL.md
