@@ -1,5 +1,73 @@
 {
   "hooks": {
+    "SlashCommand": [
+      {
+        "name": "claude-retain",
+        "description": "Comandos del plugin claude-retain — memoria, cache y grafo de conocimiento",
+        "subcommands": [
+          {
+            "name": "stats",
+            "description": "Estadísticas de memoria (L0-L3) y cache LLM"
+          },
+          {
+            "name": "search <query>",
+            "description": "Buscar recuerdos en la memoria persistente"
+          },
+          {
+            "name": "layers",
+            "description": "Estado de las 4 capas de memoria (L0-L3)"
+          },
+          {
+            "name": "graph [entity]",
+            "description": "Mostrar grafo de conocimiento para una entidad"
+          },
+          {
+            "name": "llm-cache-stats",
+            "description": "Estadísticas del cache de respuestas LLM"
+          },
+          {
+            "name": "llm-cache-clear",
+            "description": "Limpiar entradas expiradas del cache LLM"
+          },
+          {
+            "name": "compress",
+            "description": "Comprimir la sesión actual manualmente"
+          },
+          {
+            "name": "consolidate",
+            "description": "Consolidar diarios en resúmenes semanales"
+          },
+          {
+            "name": "memory-summary",
+            "description": "Mostrar resumen de memoria comprimida"
+          },
+          {
+            "name": "checkpoints",
+            "description": "Listar checkpoints de memoria"
+          },
+          {
+            "name": "rewind [checkpoint]",
+            "description": "Restaurar la memoria a un checkpoint anterior"
+          },
+          {
+            "name": "branch --from=X --name=Y",
+            "description": "Crear bifurcación de memoria desde un checkpoint"
+          },
+          {
+            "name": "replay [checkpoint]",
+            "description": "Ver los recuerdos de un checkpoint (sin restaurar)"
+          },
+          {
+            "name": "delete-checkpoint <id>",
+            "description": "Eliminar un checkpoint de la memoria"
+          },
+          {
+            "name": "build-graph [files]",
+            "description": "Reconstruir el grafo del proyecto para archivos dados"
+          }
+        ]
+      }
+    ],
     "SessionStart": [
       {
         "matcher": "startup|resume|clear|compact",
