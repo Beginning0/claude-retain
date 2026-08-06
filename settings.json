@@ -97,6 +97,66 @@
   },
 
   "skill_triggers": {
+    "agent-orchestration": {
+      "trigger": "/agent-orchestration",
+      "description": "Orquestación de tareas complejas — detecta si necesita LOOP o GRAPH"
+    },
+    "graph-orchestration": {
+      "trigger": "/graph-orchestration",
+      "description": "Flujo con pasos definidos y decisiones condicionales — debugging, migraciones, deploys"
+    },
+    "loop-orchestration": {
+      "trigger": "/loop-orchestration",
+      "description": "Iterar sobre una tarea — debugging, refactor, prueba y error iterativo"
+    },
+    "claude-retain-eval": {
+      "trigger": "/claude-retain-eval",
+      "description": "Evaluar resultado de tarea completada — guardar patrón para futuras referencias"
+    },
+    "claude-retain-stats": {
+      "trigger": "/claude-retain-stats",
+      "description": "Ver estadísticas de memoria, cache LLM y uso de tokens"
+    },
+    "claude-retain-search": {
+      "trigger": "/claude-retain-search",
+      "description": "Buscar recuerdos en la memoria persistente"
+    },
+    "claude-retain-layers": {
+      "trigger": "/claude-retain-layers",
+      "description": "Ver capas de memoria L0-L3 y estado de la memoria persistente"
+    },
+    "claude-retain-graph": {
+      "trigger": "/claude-retain-graph",
+      "description": "Ver grafo de conocimiento — entidades y relaciones del sistema de memoria"
+    },
+    "claude-retain-llm-cache-stats": {
+      "trigger": "/claude-retain-llm-cache-stats",
+      "description": "Ver estadísticas del cache de respuestas LLM y hits del cache"
+    },
+    "claude-retain-llm-cache-clear": {
+      "trigger": "/claude-retain-llm-cache-clear",
+      "description": "Limpiar entradas del cache de respuestas LLM"
+    },
+    "project-graph": {
+      "trigger": "/project-graph",
+      "description": "Consultar graph semántico del proyecto y skills disponibles antes de leer archivos"
+    },
+    "read-first-graph": {
+      "trigger": "/read-first-graph",
+      "description": "Antes de leer archivos, consultar graph para ver si ya hay info guardada"
+    },
+    "project-knowledge-hub": {
+      "trigger": "/project-knowledge-hub",
+      "description": "Hub de conocimiento — cuánto sabe el graph sobre cada archivo y gaps de información"
+    },
+    "debug-first-graph": {
+      "trigger": "/debug-first-graph",
+      "description": "Debuggear errores — consultar graph ANTES de leer archivos, usar sub-agentes en paralelo"
+    },
+    "scope-checker": {
+      "trigger": "/scope-checker",
+      "description": "Detectar problemas de scope de variables — declaraciones condicionales, variables implícitas globales"
+    },
     "memory-time-travel": {
       "trigger": "/memory-time-travel",
       "description": "Activar Time-Travel Debugging — rewind, replay y branch de memoria"
