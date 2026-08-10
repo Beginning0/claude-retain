@@ -42,8 +42,5 @@
     "./agents/project-knowledge-hub.md",
     "./agents/read-first-graph.md",
     "./agents/project-graph.md"
-  ],
-  "hooks": [
-    "./hooks/hooks.json"
   ]
 }

@@ -57,12 +57,7 @@ if (Test-Path $pluginJson) {
         $success = $false
     }
 
-    # Verificar clave hooks
-    if ($config.hooks) {
-        Write-Host "     - hooks: $($config.hooks.Count) archivos" -ForegroundColor Gray
-    } else {
-        Write-Host "[WARN] Faltando clave 'hooks' en plugin.json (opcional)" -ForegroundColor Yellow
-    }
+    # Nota: hooks ya no se referencian en plugin.json — Claude Code carga hooks/hooks.json automaticamente por convencion
 
     # Verificar que NO hay clave 'skills' (obsoleta)
     if ($config.skills) {
