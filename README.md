@@ -189,24 +189,62 @@ Y usar solo el cache LLM y memoria persistente sin compresión con llama.cpp.
 
 ## Uso
 
-### Comandos en terminal
+### Slash commands de Claude Code (en el chat)
 
 ```
-!claude-retain stats            — Estadísticas de memoria y cache
-!claude-retain search <query>   — Buscar en memoria persistente
-!claude-retain layers           — Estado de las 4 capas (L0-L3)
-!claude-retain graph [entity]   — Grafo de conocimiento
-!claude-retain llm-cache stats  — Estadísticas del cache LLM
-!claude-retain llm-cache clear  — Limpiar cache LLM
-!claude-retain help             — Ayuda
+/claude-retain-stats              — Estadísticas de memoria y cache
+/claude-retain-search <query>     — Buscar en memoria persistente
+/claude-retain-layers             — Estado de las 4 capas (L0-L3)
+/claude-retain-graph [entity]     — Grafo de conocimiento
+/claude-retain-llm-cache-stats    — Estadísticas del cache LLM
+/claude-retain-llm-cache-clear    — Limpiar cache LLM
+/claude-retain-compress           — Comprimir sesión actual manualmente
+/claude-retain-consolidate        — Consolidar diarios en semanales manualmente
+/claude-retain-memory-summary     — Mostrar resumen de memoria comprimida
+/claude-retain-checkpoints        — Listar checkpoints (Time-Travel Debugging)
+/claude-retain-rewind <id>        — Restaurar a checkpoint anterior
+/claude-retain-branch --from=X --name=Y  — Crear bifurcación de memoria
+/claude-retain-replay <id>        — Ver recuerdos de un checkpoint
+/claude-retain-delete-checkpoint  — Eliminar un checkpoint
+/claude-retain-build-graph        — Construir/actualizar graph del proyecto
+/claude-retain-knowledge-hub      — Hub de conocimiento del proyecto
+/claude-retain-debug-first-graph  — Debug con graph primero
 ```
 
-### Comandos de compresión
+### Agentes/Skills de Claude Code (en el chat)
+
+Se activan automaticamente o se invocan con `@nombre-agente`:
 
 ```
-!claude-retain compress           — Comprimir sesión actual manualmente
-!claude-retain consolidate        — Consolidar diarios en semanales manualmente
-!claude-retain memory-summary     — Mostrar resumen de memoria comprimida
+@agent-orchestration              — Detecta si necesita LOOP o GRAPH para tareas complejas
+@graph-orchestration              — Modo GRAPH con pasos definidos y decisiones condicionales
+@loop-orchestration               — Modo LOOP para iterar sobre una tarea
+@claude-retain-eval               — Evaluar resultado de tarea completada
+@scope-checker                    — Detectar problemas de scope de variables
+@debug-first-graph                — Debug: consultar graph ANTES de leer archivos
+@project-graph                    — Consultar graph semántico del proyecto
+@read-first-graph                 — Antes de leer, consultar graph primero
+@project-knowledge-hub            — Hub de conocimiento del proyecto
+@claude-retain-stats              — Ver estadísticas de memoria
+@claude-retain-search             — Buscar en memoria persistente
+@claude-retain-layers             — Ver capas de memoria L0-L3
+@claude-retain-graph              — Ver grafo de conocimiento
+@claude-retain-llm-cache-stats    — Ver estadísticas del cache LLM
+@claude-retain-llm-cache-clear    — Limpiar cache LLM
+@memory-time-travel               — Time-Travel Debugging (rewind, replay, branch)
+```
+
+### Comandos CLI de terminal (fuera de Claude Code)
+
+Tambien puedes usar los comandos desde la terminal:
+
+```bash
+!claude-retain stats              — Estadísticas de memoria y cache (CLI)
+!claude-retain search <query>     — Buscar en memoria persistente (CLI)
+!claude-retain layers             — Estado de las 4 capas (CLI)
+!claude-retain graph [entity]     — Grafo de conocimiento (CLI)
+!claude-retain llm-cache stats    — Estadísticas del cache LLM (CLI)
+!claude-retain llm-cache clear    — Limpiar cache LLM (CLI)
 ```
 
 ## Configuración

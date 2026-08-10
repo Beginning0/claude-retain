@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "claude-retain-claude-plugin"
-version = "0.1.1"
-description = "Memoria persistente con 4 capas y cache de respuestas LLM para Claude Code"
+version = "0.1.2"
+description = "Memoria persistente con 4 capas y cache de respuestas LLM para Claude Code — plugin.json corregido: commands + agents + hooks"
 authors = [
     {name = "Shado Terro"}
 ]

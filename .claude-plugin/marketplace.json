@@ -8,7 +8,7 @@
     {
       "name": "claude-retain",
       "description": "Memoria persistente con 4 capas (L0-L3), cache de respuestas LLM y auto-permission para Claude Code. Ahorra tokens y recuerda conversaciones pasadas.",
-      "version": "0.1.1",
+      "version": "0.1.2",
       "source": {
         "source": "github",
         "repo": "Beginning0/claude-retain"

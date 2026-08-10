@@ -1,27 +1,49 @@
 {
   "name": "claude-retain",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Memoria persistente con 4 capas (L0-L3), cache de respuestas LLM y auto-permission para Claude Code. Ahorra tokens y recuerda conversaciones pasadas.",
   "author": {
     "name": "Shado Terro"
   },
   "repository": "https://github.com/Beginning0/claude-retain",
-  "skills": [
-    "./skills/agent-orchestration",
-    "./skills/loop-orchestration",
-    "./skills/graph-orchestration",
-    "./skills/claude-retain-eval",
-    "./skills/claude-retain-stats",
-    "./skills/claude-retain-search",
-    "./skills/claude-retain-layers",
-    "./skills/claude-retain-graph",
-    "./skills/claude-retain-llm-cache-stats",
-    "./skills/claude-retain-llm-cache-clear",
-    "./skills/project-graph",
-    "./skills/read-first-graph",
-    "./skills/project-knowledge-hub",
-    "./skills/debug-first-graph",
-    "./skills/memory-time-travel"
+  "commands": [
+    "./commands/claude-retain-stats.md",
+    "./commands/claude-retain-search.md",
+    "./commands/claude-retain-layers.md",
+    "./commands/claude-retain-graph.md",
+    "./commands/claude-retain-llm-cache-stats.md",
+    "./commands/claude-retain-llm-cache-clear.md",
+    "./commands/claude-retain-compress.md",
+    "./commands/claude-retain-consolidate.md",
+    "./commands/claude-retain-memory-summary.md",
+    "./commands/claude-retain-checkpoints.md",
+    "./commands/claude-retain-rewind.md",
+    "./commands/claude-retain-branch.md",
+    "./commands/claude-retain-replay.md",
+    "./commands/claude-retain-delete-checkpoint.md",
+    "./commands/claude-retain-build-graph.md",
+    "./commands/claude-retain-knowledge-hub.md",
+    "./commands/claude-retain-debug-first-graph.md"
+  ],
+  "agents": [
+    "./agents/agent-orchestration.md",
+    "./agents/claude-retain-eval.md",
+    "./agents/claude-retain-graph.md",
+    "./agents/claude-retain-layers.md",
+    "./agents/claude-retain-llm-cache-clear.md",
+    "./agents/claude-retain-llm-cache-stats.md",
+    "./agents/claude-retain-search.md",
+    "./agents/claude-retain-stats.md",
+    "./agents/graph-orchestration.md",
+    "./agents/loop-orchestration.md",
+    "./agents/memory-time-travel.md",
+    "./agents/scope-checker.md",
+    "./agents/debug-first-graph.md",
+    "./agents/project-knowledge-hub.md",
+    "./agents/read-first-graph.md",
+    "./agents/project-graph.md"
+  ],
+  "hooks": [
+    "./hooks/hooks.json"
   ]
 }
-
