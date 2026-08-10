@@ -1,7 +1,8 @@
 #!/bin/bash
 # Hook: antes de iniciar sesión — cargar memoria comprimida
 
-python3 -c "
+PYTHON=$(command -v python3 || command -v python)
+$PYTHON -c "
 import sys, os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

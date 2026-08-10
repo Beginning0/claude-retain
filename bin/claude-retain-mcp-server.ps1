@@ -25,6 +25,11 @@ if (-not $pluginDir) {
 
 $env:claude-retain_CACHE_PATH = "$HOME\.claude-retain\llm_cache.db"
 $env:PYTHONPATH = "${pluginDir};${env:PYTHONPATH}"
-& python3 -m claude_retain.mcp_server
+
+$pythonExe = "python3"
+if (-not (Get-Command $pythonExe -ErrorAction SilentlyContinue)) {
+    $pythonExe = "python"
+}
+& $pythonExe -m claude_retain.mcp_server
 
 

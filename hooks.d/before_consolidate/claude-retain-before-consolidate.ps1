@@ -1,7 +1,12 @@
 # Hook: antes de consolidar — verificar si hay resúmenes diarios para consolidar
 $PLUGIN_ROOT = ${env:CLAUDE_PLUGIN_ROOT} -or (Split-Path $PSScriptRoot -Parent)
 
-python3 -c "
+$pythonExe = "python3"
+if (-not (Get-Command $pythonExe -ErrorAction SilentlyContinue)) {
+    $pythonExe = "python"
+}
+
+$pythonCode = @"
 import sys, os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
@@ -17,4 +22,6 @@ if not summaries:
     sys.exit(0)
 
 print(f'[claude-retain] Consolidation: {len(summaries)} daily summaries found, consolidating...')
-" 2>$null || $true
+"@
+
+& $pythonExe -c $pythonCode 2>$null || $true

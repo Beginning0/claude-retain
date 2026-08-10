@@ -19,6 +19,12 @@ else {
 
 if (-not $pluginDir) { exit 0 }
 
+# Fallback: python3 -> python
+$pythonExe = "python3"
+if (-not (Get-Command $pythonExe -ErrorAction SilentlyContinue)) {
+    $pythonExe = "python"
+}
+
 $cachePath = "$HOME\.claude-retain\llm_cache.db"
 
 # Inicializar la base de datos SQLite del cache si no existe
@@ -28,7 +34,7 @@ if (-not (Test-Path $cachePath)) {
         New-Item -ItemType Directory -Force -Path $cacheDir | Out-Null
     }
 
-    python3 -c @"
+    $pythonExe -c @"
 import sqlite3, os, time
 db_path = r'$cachePath'
 os.makedirs(os.path.dirname(db_path), exist_ok=True)
@@ -53,7 +59,7 @@ conn.close()
 
 # Limpiar entradas expiradas del cache
 if (Test-Path $cachePath) {
-    python3 -c @"
+    $pythonExe -c @"
 import sqlite3, time
 db_path = r'$cachePath'
 conn = sqlite3.connect(db_path)
@@ -86,7 +92,7 @@ print(db_path)
 print(os.path.exists(db_path))
 "@
 
-$graphResult = python3 -c $pythonCode 2>$null
+$graphResult = & $pythonExe -c $pythonCode 2>$null
 $graphDbPath = $graphResult[0]
 $graphExists = $false
 if ($graphResult.Count -gt 1) {
@@ -105,7 +111,7 @@ result = pm.build_graph()
 print(f'BUILT: nodes={result["nodes_created"]}, edges={result["edges_created"]}')
 "@
 
-    & python3 -c $buildCode 2>$null | ForEach-Object {
+    & $pythonExe -c $buildCode 2>$null | ForEach-Object {
         if ($_ -match "^BUILT:") {
             Write-Host "[claude-retain] Graph construido: $_" -ForegroundColor DarkGreen
         }

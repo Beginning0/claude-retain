@@ -1,7 +1,8 @@
 #!/bin/bash
 # Hook: después de una herramienta — auto-save si se cruzó el umbral de 3 herramientas
 
-python3 -c "
+PYTHON=$(command -v python3 || command -v python)
+$PYTHON -c "
 import sys, os, json
 from pathlib import Path
 

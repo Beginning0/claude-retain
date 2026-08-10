@@ -1,8 +1,10 @@
 #!/bin/bash
-# Wrapper Bash para mempalace delete-checkpoint
+# Wrapper Bash para claude-retain delete-checkpoint
+# Fallback: python3 -> python
+PYTHON=$(command -v python3 || command -v python)
 
-if command -v mempalace >/dev/null; then
-    exec mempalace delete-checkpoint "$@"
+if command -v claude-retain >/dev/null; then
+    exec claude-retain delete-checkpoint "$@"
 fi
 
 PLUGIN_DIR=""
@@ -11,8 +13,8 @@ if [ -n "${CLAUDE_PLUGIN_ROOT}" ]; then
 elif [ -d "$PWD/.claude-plugin" ]; then
     PLUGIN_DIR="$PWD"
 else
-    for dir in "$HOME/.claude/plugins/mempalace" "${CLAUDE_PLUGIN_ROOT:-.}"; do
-        if [ -d "$dir" ] && [ -f "$dir/mempalace_plugin/cli.py" ]; then
+    for dir in "$HOME/.claude/plugins/claude-retain" "${CLAUDE_PLUGIN_ROOT:-.}"; do
+        if [ -d "$dir" ] && [ -f "$dir/claude_retain/cli.py" ]; then
             PLUGIN_DIR="$dir"
             break
         fi
@@ -20,8 +22,8 @@ else
 fi
 
 if [ -z "$PLUGIN_DIR" ]; then
-    echo "[mempalace] ERROR: No se encontro el directorio del plugin."
+    echo "[claude-retain] ERROR: No se encontro el directorio del plugin."
     exit 1
 fi
 
-PYTHONPATH="${PLUGIN_DIR}:${PYTHONPATH}" exec python3 -m mempalace_plugin.cli delete-checkpoint "$@"
+PYTHONPATH="${PLUGIN_DIR}:${PYTHONPATH}" exec "$PYTHON" -m claude_retain.cli delete-checkpoint "$@"

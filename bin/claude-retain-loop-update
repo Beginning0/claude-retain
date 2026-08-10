@@ -1,6 +1,9 @@
 #!/bin/bash
 # Hook LoopUpdate — Evalúa el resultado de una iteración LOOP y actualiza MemPalace
 
+# Fallback: python3 -> python
+PYTHON=$(command -v python3 || command -v python)
+
 PLUGIN_DIR=""
 if [ -n "${CLAUDE_PLUGIN_ROOT}" ]; then
     PLUGIN_DIR="${CLAUDE_PLUGIN_ROOT}"
@@ -8,9 +11,9 @@ elif [ -d "$PWD/.claude-plugin" ]; then
     PLUGIN_DIR="$PWD"
 else
     for dir in \
-        "$HOME/.claude/plugins/mempalace" \
+        "$HOME/.claude/plugins/claude-retain" \
         "${CLAUDE_PLUGIN_ROOT:-.}"; do
-        if [ -d "$dir" ] && [ -f "$dir/mempalace_plugin/cli.py" ]; then
+        if [ -d "$dir" ] && [ -f "$dir/claude_retain/cli.py" ]; then
             PLUGIN_DIR="$dir"
             break
         fi
@@ -28,7 +31,7 @@ if [ ! -f "$LOOP_STATE" ]; then
 fi
 
 # Leer estado actual del LOOP
-ITERATION=$(python3 -c "
+ITERATION=$($PYTHON -c "
 import sys
 try:
     with open('$LOOP_STATE') as f:
@@ -46,17 +49,17 @@ TOOL_INPUT=$(cat)
 TOOL_NAME=""
 RESULT="unknown"
 
-if command -v python3 &>/dev/null; then
-    TOOL_NAME=$(echo "$TOOL_INPUT" | python3 -c "import sys, json; print(json.loads(sys.stdin.read()).get('tool_name', ''))" 2>/dev/null)
-    EXIT_CODE=$(echo "$TOOL_INPUT" | python3 -c "import sys, json; inp = json.loads(sys.stdin.read()).get('input', {}); print(inp.get('exit_code', ''))" 2>/dev/null)
+if command -v $PYTHON &>/dev/null; then
+    TOOL_NAME=$(echo "$TOOL_INPUT" | $PYTHON -c "import sys, json; print(json.loads(sys.stdin.read()).get('tool_name', ''))" 2>/dev/null)
+    EXIT_CODE=$(echo "$TOOL_INPUT" | $PYTHON -c "import sys, json; inp = json.loads(sys.stdin.read()).get('input', {}); print(inp.get('exit_code', ''))" 2>/dev/null)
 
     if [ -n "$EXIT_CODE" ]; then
-        RESULT=$(python3 -c "print('success' if $EXIT_CODE == 0 else 'failure')")
+        RESULT=$($PYTHON -c "print('success' if $EXIT_CODE == 0 else 'failure')")
     fi
 fi
 
 # Actualizar evaluación en MemPalace
-EVAL_DIR="$HOME/.mempalace/evaluations"
+EVAL_DIR="$HOME/.claude-retain/evaluations"
 if [ ! -d "$EVAL_DIR" ]; then
     mkdir -p "$EVAL_DIR"
 fi
@@ -65,8 +68,8 @@ TIMESTAMP=$(date +%Y%m%d-%H%M%S)
 EVAL_FILE="$EVAL_DIR/loop-${TIMESTAMP}.md"
 
 TASK_NAME=""
-if command -v python3 &>/dev/null; then
-    TASK_NAME=$(python3 -c "
+if command -v $PYTHON &>/dev/null; then
+    TASK_NAME=$($PYTHON -c "
 try:
     with open('$LOOP_STATE') as f:
         content = f.read()
@@ -94,4 +97,4 @@ updated_at: $(date -u +%Y-%m-%dT%H:%M:%SZ)
 ---
 EOF
 
-echo "[mempalace] LoopUpdate - iteracion $ITERATION evaluada: $RESULT"
+echo "[claude-retain] LoopUpdate - iteracion $ITERATION evaluada: $RESULT"

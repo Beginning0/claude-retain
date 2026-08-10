@@ -1,6 +1,9 @@
 #!/bin/bash
 # Hook SessionStart — Inicializa el cache LLM al iniciar sesión
 
+# Fallback: python3 -> python
+PYTHON=$(command -v python3 || command -v python)
+
 PLUGIN_DIR=""
 if [ -n "${CLAUDE_PLUGIN_ROOT}" ]; then
     PLUGIN_DIR="${CLAUDE_PLUGIN_ROOT}"
@@ -8,9 +11,9 @@ elif [ -d "$PWD/.claude-plugin" ]; then
     PLUGIN_DIR="$PWD"
 else
     for dir in \
-        "$HOME/.claude/plugins/mempalace" \
+        "$HOME/.claude/plugins/claude-retain" \
         "${CLAUDE_PLUGIN_ROOT:-.}"; do
-        if [ -d "$dir" ] && [ -f "$dir/mempalace_plugin/cli.py" ]; then
+        if [ -d "$dir" ] && [ -f "$dir/claude_retain/cli.py" ]; then
             PLUGIN_DIR="$dir"
             break
         fi
@@ -21,12 +24,12 @@ if [ -z "$PLUGIN_DIR" ]; then
     exit 0
 fi
 
-CACHE_PATH="$HOME/.mempalace/llm_cache.db"
+CACHE_PATH="$HOME/.claude-retain/llm_cache.db"
 
 # Inicializar la base de datos SQLite del cache si no existe
 if [ ! -f "$CACHE_PATH" ]; then
     mkdir -p "$(dirname "$CACHE_PATH")"
-    python3 -c "
+    $PYTHON -c "
 import sqlite3, os, time
 db_path = '$CACHE_PATH'
 os.makedirs(os.path.dirname(db_path), exist_ok=True)
@@ -50,7 +53,7 @@ conn.close()
 fi
 
 # Limpiar entradas expiradas del cache
-python3 -c "
+$PYTHON -c "
 import sqlite3, time
 db_path = '$CACHE_PATH'
 if __import__('os').path.exists(db_path):
@@ -59,23 +62,23 @@ if __import__('os').path.exists(db_path):
     conn.execute('DELETE FROM llm_cache WHERE fecha_guardado < ?', (now_str,))
     total = conn.execute('SELECT COUNT(*) FROM llm_cache').fetchone()[0]
     conn.commit()
-    print(f'[mempalace] LLM Cache - {total} entradas en cache')
+    print(f'[claude-retain] LLM Cache - {total} entradas en cache')
     conn.close()
 " 2>/dev/null
 
 # ──────── Detectar nuevo proyecto y construir graph ────────
 
 CURRENT_PROJECT="$PWD"
-PROJECT_HASH=$(python3 -c "import hashlib; print(hashlib.md5('$CURRENT_PROJECT'.encode()).hexdigest()[:8])" 2>/dev/null)
-GRAPH_DB="$HOME/.mempalace/project_graph_${PROJECT_HASH}.db"
+PROJECT_HASH=$($PYTHON -c "import hashlib; print(hashlib.md5('$CURRENT_PROJECT'.encode()).hexdigest()[:8])" 2>/dev/null)
+GRAPH_DB="$HOME/.claude-retain/project_graph_${PROJECT_HASH}.db"
 
 if [ ! -f "$GRAPH_DB" ]; then
-    echo "[mempalace] Graph - nuevo proyecto detectado, construyendo graph..." >&2
+    echo "[claude-retain] Graph - nuevo proyecto detectado, construyendo graph..." >&2
 
-    python3 -c "
+    $PYTHON -c "
 import sys, os
 sys.path.insert(0, '$PLUGIN_DIR')
-from mempalace_plugin.project_graph import ProjectGraphManager
+from claude_retain.project_graph import ProjectGraphManager
 
 pm = ProjectGraphManager('$CURRENT_PROJECT')
 result = pm.build_graph()

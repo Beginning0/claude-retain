@@ -1,5 +1,7 @@
 #!/bin/bash
 # Hook Startup — Descubre herramientas disponibles al iniciar sesión y registra en MemPalace L0
+# Fallback: python3 -> python
+PYTHON=$(command -v python3 || command -v python)
 
 PLUGIN_DIR=""
 if [ -n "${CLAUDE_PLUGIN_ROOT}" ]; then
@@ -8,9 +10,9 @@ elif [ -d "$PWD/.claude-plugin" ]; then
     PLUGIN_DIR="$PWD"
 else
     for dir in \
-        "$HOME/.claude/plugins/mempalace" \
+        "$HOME/.claude/plugins/claude-retain" \
         "${CLAUDE_PLUGIN_ROOT:-.}"; do
-        if [ -d "$dir" ] && [ -f "$dir/mempalace_plugin/cli.py" ]; then
+        if [ -d "$dir" ] && [ -f "$dir/claude_retain/cli.py" ]; then
             PLUGIN_DIR="$dir"
             break
         fi
@@ -21,13 +23,13 @@ if [ -z "$PLUGIN_DIR" ]; then
     exit 0
 fi
 
-TOOLS_FILE="$HOME/.mempalace/tools_available.md"
+TOOLS_FILE="$HOME/.claude-retain/tools_available.md"
 TOOLS_DIR=$(dirname "$TOOLS_FILE")
 mkdir -p "$TOOLS_DIR"
 
 TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 
-echo "[mempalace] Startup - descubriendo herramientas..."
+echo "[claude-retain] Startup - descubriendo herramientas..."
 
 # Descubrir skills instaladas como .skill files
 SKILLS=""
@@ -38,7 +40,7 @@ fi
 # Descubrir skills del plugin.json
 PLUGIN_SKILLS=""
 if [ -f "$PLUGIN_DIR/.claude-plugin/plugin.json" ]; then
-    PLUGIN_SKILLS=$(python3 -c "
+    PLUGIN_SKILLS=$($PYTHON -c "
 import json
 try:
     config = json.load(open('$PLUGIN_DIR/.claude-plugin/plugin.json'))
@@ -50,15 +52,15 @@ except:
 fi
 
 # Descubrir skills de MemPalace
-MEMPALACE_SKILLS=""
+CLAUDE_RETAIN_SKILLS=""
 if [ -d "$PLUGIN_DIR/skills" ]; then
-    MEMPALACE_SKILLS=$(ls -d "$PLUGIN_DIR/skills"/ 2>/dev/null | while read d; do echo "  - $(basename "$d")"; done)
+    CLAUDE_RETAIN_SKILLS=$(ls -d "$PLUGIN_DIR/skills"/ 2>/dev/null | while read d; do echo "  - $(basename "$d")"; done)
 fi
 
 # Descubrir MCP servers
 MCP_SERVERS=""
 if [ -f "$HOME/.claude/settings.json" ]; then
-    MCP_SERVERS=$(python3 -c "
+    MCP_SERVERS=$($PYTHON -c "
 import json
 try:
     with open('$HOME/.claude/settings.json') as f:
@@ -78,11 +80,11 @@ skills_installed:
 $SKILLS
 plugin_skills:
 $PLUGIN_SKILLS
-mempalace_skills:
-$MEMPALACE_SKILLS
+claude-retain_skills:
+$CLAUDE_RETAIN_SKILLS
 mcp_servers:
 $MCP_SERVERS
 ---
 EOF
 
-echo "[mempalace] Startup - herramientas descubiertas y registradas en MemPalace"
+echo "[claude-retain] Startup - herramientas descubiertas y registradas en MemPalace"

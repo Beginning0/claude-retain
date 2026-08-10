@@ -1,10 +1,12 @@
 #!/bin/bash
 # Wrapper para mostrar estadísticas de memoria persistente y cache LLM
+# Fallback: python3 -> python
+PYTHON=$(command -v python3 || command -v python)
 # Se asegura de que PYTHONPATH incluya el directorio del plugin
 
 # Si está instalado via pip, usar CLI directamente
-if command -v mempalace &>/dev/null; then
-    exec mempalace stats "$@"
+if command -v claude-retain &>/dev/null; then
+    exec claude-retain stats "$@"
 fi
 
 # Buscar el directorio del plugin en las carpetas conocidas
@@ -15,9 +17,9 @@ elif [ -d "$PWD/.claude-plugin" ]; then
     PLUGIN_DIR="$PWD"
 else
     for dir in \
-        "$HOME/.claude/plugins/mempalace" \
+        "$HOME/.claude/plugins/claude-retain" \
         "${CLAUDE_PLUGIN_ROOT:-.}"; do
-        if [ -d "$dir" ] && [ -f "$dir/mempalace_plugin/cli.py" ]; then
+        if [ -d "$dir" ] && [ -f "$dir/claude_retain/cli.py" ]; then
             PLUGIN_DIR="$dir"
             break
         fi
@@ -25,8 +27,8 @@ else
 fi
 
 if [ -z "$PLUGIN_DIR" ]; then
-    echo "[mempalace] ERROR: No se encontró el directorio del plugin. Instala con pip install mempalace-claude-plugin o ejecuta desde el directorio del plugin."
+    echo "[claude-retain] ERROR: No se encontró el directorio del plugin. Instala con pip install claude-retain-claude-plugin o ejecuta desde el directorio del plugin."
     exit 1
 fi
 
-PYTHONPATH="${PLUGIN_DIR}:${PYTHONPATH}" exec python3 -m mempalace_plugin.cli stats "$@"
+PYTHONPATH="${PLUGIN_DIR}:${PYTHONPATH}" exec "$PYTHON" -m claude_retain.cli stats "$@"

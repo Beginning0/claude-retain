@@ -1,9 +1,11 @@
 #!/bin/bash
 # Wrapper para buscar en la memoria persistente
+# Fallback: python3 -> python
+PYTHON=$(command -v python3 || command -v python)
 # Se asegura de que PYTHONPATH incluya el directorio del plugin
 
-if command -v mempalace &>/dev/null; then
-    exec mempalace search "$@"
+if command -v claude-retain &>/dev/null; then
+    exec claude-retain search "$@"
 fi
 
 PLUGIN_DIR=""
@@ -13,9 +15,9 @@ elif [ -d "$PWD/.claude-plugin" ]; then
     PLUGIN_DIR="$PWD"
 else
     for dir in \
-        "$HOME/.claude/plugins/mempalace" \
+        "$HOME/.claude/plugins/claude-retain" \
         "${CLAUDE_PLUGIN_ROOT:-.}"; do
-        if [ -d "$dir" ] && [ -f "$dir/mempalace_plugin/cli.py" ]; then
+        if [ -d "$dir" ] && [ -f "$dir/claude_retain/cli.py" ]; then
             PLUGIN_DIR="$dir"
             break
         fi
@@ -23,8 +25,8 @@ else
 fi
 
 if [ -z "$PLUGIN_DIR" ]; then
-    echo "[mempalace] ERROR: No se encontró el directorio del plugin. Instala con pip install mempalace-claude-plugin o ejecuta desde el directorio del plugin."
+    echo "[claude-retain] ERROR: No se encontró el directorio del plugin. Instala con pip install claude-retain-claude-plugin o ejecuta desde el directorio del plugin."
     exit 1
 fi
 
-PYTHONPATH="${PLUGIN_DIR}:${PYTHONPATH}" exec python3 -m mempalace_plugin.cli search "$@"
+PYTHONPATH="${PLUGIN_DIR}:${PYTHONPATH}" exec "$PYTHON" -m claude_retain.cli search "$@"

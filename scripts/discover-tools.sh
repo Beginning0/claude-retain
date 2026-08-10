@@ -9,6 +9,9 @@ SETTINGS_FILE="$HOME/.claude/settings.json"
 echo "=== Descubriendo herramientas disponibles ==="
 echo ""
 
+# Fallback: python3 -> python
+PYTHON=$(command -v python3 || command -v python)
+
 # 1. Skills instaladas como archivos .skill
 echo "Skills (.skill files):"
 if [ -d "$SKILLS_DIR" ]; then
@@ -29,7 +32,7 @@ echo ""
 echo "Skills del plugin:"
 PLUGIN_JSON="$PLUGIN_ROOT/.claude-plugin/plugin.json"
 if [ -f "$PLUGIN_JSON" ]; then
-    skills=$(python3 -c "import json; print('\n'.join('  - ' + s for s in json.load(open('$PLUGIN_JSON')).get('skills', [])))" 2>/dev/null)
+    skills=$($PYTHON -c "import json; print('\n'.join('  - ' + s for s in json.load(open('$PLUGIN_JSON')).get('skills', [])))" 2>/dev/null)
     if [ -n "$skills" ]; then
         echo "$skills"
     else
@@ -41,7 +44,7 @@ fi
 echo ""
 echo "MCP Servers:"
 if [ -f "$SETTINGS_FILE" ]; then
-    mcp_servers=$(python3 -c "
+    mcp_servers=$($PYTHON -c "
 import json
 with open('$SETTINGS_FILE') as f:
     config = json.load(f)
@@ -61,7 +64,7 @@ fi
 echo ""
 echo "Hooks configurados:"
 if [ -f "$SETTINGS_FILE" ]; then
-    hooks=$(python3 -c "
+    hooks=$($PYTHON -c "
 import json
 with open('$SETTINGS_FILE') as f:
     config = json.load(f)

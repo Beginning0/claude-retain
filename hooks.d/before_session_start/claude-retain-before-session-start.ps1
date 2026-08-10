@@ -1,7 +1,12 @@
 # Hook: antes de iniciar sesión — cargar memoria comprimida
 $PLUGIN_ROOT = ${env:CLAUDE_PLUGIN_ROOT} -or (Split-Path $PSScriptRoot -Parent)
 
-python3 -c "
+$pythonExe = "python3"
+if (-not (Get-Command $pythonExe -ErrorAction SilentlyContinue)) {
+    $pythonExe = "python"
+}
+
+$pythonCode = @"
 import sys, os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
@@ -19,4 +24,6 @@ if archive:
     print('[claude-retain] Memory loaded: archive.md')
     print('[ARCHIVE]')
     print(archive)
-" 2>$null || $true
+"@
+
+& $pythonExe -c $pythonCode 2>$null || $true

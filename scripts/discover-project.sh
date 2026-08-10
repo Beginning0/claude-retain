@@ -28,8 +28,11 @@ fi
 
 echo "[claude-retain] Discover - analizando proyecto: $PROJECT_ROOT"
 
+# Fallback: python3 -> python
+PYTHON=$(command -v python3 || command -v python)
+
 # Escanear archivos con Python
-python3 -c "
+$PYTHON -c "
 import sys, os, re
 from pathlib import Path
 
@@ -87,7 +90,7 @@ for r in results:
     print(f\"FILE:{r['path']}|{r['classes']}-{r['functions']}-{r['async_functions']}|{'|'.join(r['imports'])}\")
 " 2>/dev/null
 
-FOUND_COUNT=$(python3 -c "
+FOUND_COUNT=$($PYTHON -c "
 import sys, os, re
 from pathlib import Path
 
@@ -120,7 +123,7 @@ echo "[claude-retain] Discover - encontrado: $FOUND_COUNT archivos de código"
 if [ "$REBUILD" = "--rebuild" ] || [ ! -f "$HOME/.claude-retain/project_graph.db" ]; then
     echo "[claude-retain] Construyendo graph del proyecto..."
 
-    python3 -c "
+    $PYTHON -c "
 import sys, os
 sys.path.insert(0, '$PLUGIN_DIR')
 from claude_retain.project_graph import ProjectGraphManager

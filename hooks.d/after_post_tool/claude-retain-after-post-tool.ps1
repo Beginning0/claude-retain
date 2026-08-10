@@ -3,7 +3,12 @@ $PLUGIN_ROOT = ${env:CLAUDE_PLUGIN_ROOT} -or (Split-Path $PSScriptRoot -Parent)
 
 $TOOL_NAME = $args[0] -or "unknown"
 
-python3 -c "
+$pythonExe = "python3"
+if (-not (Get-Command $pythonExe -ErrorAction SilentlyContinue)) {
+    $pythonExe = "python"
+}
+
+$pythonCode = @"
 import sys, os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
@@ -21,4 +26,6 @@ if tools_count >= 3:
         print(f'[claude-retain] Auto-save: {result.tokens_before} -> {result.tokens_after} tokens')
     else:
         print('[claude-retain] Auto-save: skipped (no compression needed)')
-" 2>$null || $true
+"@
+
+& $pythonExe -c $pythonCode 2>$null || $true

@@ -16,14 +16,17 @@ fi
 
 [ -z "$PLUGIN_DIR" ] && exit 0
 
+# Fallback: python3 -> python
+PYTHON=$(command -v python3 || command -v python)
+
 # Leer stdin JSON
 INPUT_TEXT=$(cat)
 [ -z "$INPUT_TEXT" ] && exit 0
 
-TOOL_NAME=$(echo "$INPUT_TEXT" | python3 -c "import sys, json; d=json.load(sys.stdin); print(d.get('tool_name',''))" 2>/dev/null)
+TOOL_NAME=$(echo "$INPUT_TEXT" | $PYTHON -c "import sys, json; d=json.load(sys.stdin); print(d.get('tool_name',''))" 2>/dev/null)
 [ "$TOOL_NAME" != "Read" ] && exit 0
 
-FILE_PATH=$(echo "$INPUT_TEXT" | python3 -c "import sys, json; d=json.load(sys.stdin); print(d.get('input',{}).get('file_path',''))" 2>/dev/null)
+FILE_PATH=$(echo "$INPUT_TEXT" | $PYTHON -c "import sys, json; d=json.load(sys.stdin); print(d.get('input',{}).get('file_path',''))" 2>/dev/null)
 [ -z "$FILE_PATH" ] && exit 0
 
 GRAPH_DIR="$HOME/.claude-retain/project_graph"
@@ -35,7 +38,7 @@ if [ ! -f "$GRAPH_DB" ]; then
 fi
 
 # Consultar si el archivo existe en el graph
-python3 -c "
+$PYTHON -c "
 import sys, os, sqlite3
 
 graph_db = r'$GRAPH_DB'

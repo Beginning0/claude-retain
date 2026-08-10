@@ -19,11 +19,17 @@ else {
 
 if (-not $pluginDir) { exit 0 }
 
+# Fallback: python3 -> python
+$pythonExe = "python3"
+if (-not (Get-Command $pythonExe -ErrorAction SilentlyContinue)) {
+    $pythonExe = "python"
+}
+
 $cachePath = "$HOME\.claude-retain\llm_cache.db"
 
 # Limpiar entradas expiradas del cache al final de cada respuesta
 if (Test-Path $cachePath) {
-    python3 -c @"
+    $pythonExe -c @"
 import sqlite3, time
 db_path = r'$cachePath'
 conn = sqlite3.connect(db_path)

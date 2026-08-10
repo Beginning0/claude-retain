@@ -18,4 +18,5 @@ if [ -z "$pluginDir" ]; then
     exit 1
 fi
 
-PYTHONPATH="$pluginDir:$PYTHONPATH" exec python3 "bin/claude-retain-project-graph.py" "$@"
+PYTHON=$(command -v python3 || command -v python)
+PYTHONPATH="$pluginDir:$PYTHONPATH" exec "$PYTHON" "bin/claude-retain-project-graph.py" "$@"

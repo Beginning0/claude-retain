@@ -1,7 +1,12 @@
 # Hook: antes de guardar — comprimir sesión actual
 $PLUGIN_ROOT = ${env:CLAUDE_PLUGIN_ROOT} -or (Split-Path $PSScriptRoot -Parent)
 
-python3 -c "
+$pythonExe = "python3"
+if (-not (Get-Command $pythonExe -ErrorAction SilentlyContinue)) {
+    $pythonExe = "python"
+}
+
+$pythonCode = @"
 import sys, os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
@@ -22,4 +27,6 @@ try:
 finally:
     from pipeline.spawn_guard import release_lock
     release_lock()
-" 2>$null || $true
+"@
+
+& $pythonExe -c $pythonCode 2>$null || $true

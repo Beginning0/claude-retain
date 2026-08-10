@@ -68,7 +68,11 @@ if (Test-Path $ps1Script) {
 }
 elseif (Test-Path $pyScript) {
     try {
-        $output = & python $pyScript $filePath --json 2>&1
+        $pythonExe = "python3"
+        if (-not (Get-Command $pythonExe -ErrorAction SilentlyContinue)) {
+            $pythonExe = "python"
+        }
+        $output = & $pythonExe $pyScript $filePath --json 2>&1
         if ($LASTEXITCODE -ne 0 -and $output) {
             $issues = ($output | ConvertFrom-Json | Measure-Object).Count
             Write-Host "[claude-retain] scope-checker: Se encontraron $issues problema(s) de scope en $filePath antes de escribir." -ForegroundColor Yellow

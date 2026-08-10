@@ -15,18 +15,21 @@ fi
 
 [ -z "$PLUGIN_DIR" ] && exit 0
 
+# Fallback: python3 -> python
+PYTHON=$(command -v python3 || command -v python)
+
 INPUT_TEXT=$(cat)
 [ -z "$INPUT_TEXT" ] && exit 0
 
-TOOL_NAME=$(echo "$INPUT_TEXT" | python3 -c "import sys, json; d=json.load(sys.stdin); print(d.get('tool_name',''))" 2>/dev/null)
+TOOL_NAME=$(echo "$INPUT_TEXT" | $PYTHON -c "import sys, json; d=json.load(sys.stdin); print(d.get('tool_name',''))" 2>/dev/null)
 [ "$TOOL_NAME" != "Read" ] && exit 0
 
-FILE_PATH=$(echo "$INPUT_TEXT" | python3 -c "import sys, json; d=json.load(sys.stdin); print(d.get('input',{}).get('file_path',''))" 2>/dev/null)
+FILE_PATH=$(echo "$INPUT_TEXT" | $PYTHON -c "import sys, json; d=json.load(sys.stdin); print(d.get('input',{}).get('file_path',''))" 2>/dev/null)
 [ -z "$FILE_PATH" ] && exit 0
 
 # Verificar si el archivo está dentro del proyecto actual
 CURRENT_PROJECT="$(pwd)"
-IN_PROJECT=$(python3 -c "
+IN_PROJECT=$($PYTHON -c "
 import os, sys
 project_root = r'$CURRENT_PROJECT'
 file_path = r'$FILE_PATH'
@@ -44,7 +47,7 @@ GRAPH_DIR="$HOME/.claude-retain/project_graph"
 
 if [ -f "$GRAPH_DB" ]; then
     # Actualizar incrementalmente solo este archivo
-    python3 -c "
+    $PYTHON -c "
 import sys, os
 sys.path.insert(0, r'$PLUGIN_DIR')
 from claude_retain.project_graph import ProjectGraphManager
@@ -67,7 +70,7 @@ else
     # Construir graph completo del proyecto
     echo "[claude-retain] PostRead — graph no encontrado, construyendo..." >&2
 
-    python3 -c "
+    $PYTHON -c "
 import sys, os
 sys.path.insert(0, r'$PLUGIN_DIR')
 from claude_retain.project_graph import ProjectGraphManager

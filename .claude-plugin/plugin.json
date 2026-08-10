@@ -1,6 +1,6 @@
 {
   "name": "claude-retain",
-  "version": "0.1.2",
+  "version": "0.1.2.1",
   "description": "Memoria persistente con 4 capas (L0-L3), cache de respuestas LLM y auto-permission para Claude Code. Ahorra tokens y recuerda conversaciones pasadas.",
   "author": {
     "name": "Shado Terro"

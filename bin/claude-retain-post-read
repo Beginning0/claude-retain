@@ -1,12 +1,15 @@
 #!/bin/bash
 # Hook PostToolUse — Construye/actualiza el graph del proyecto después de leer archivos
 
+# Fallback: python3 -> python
+PYTHON=$(command -v python3 || command -v python)
+
 PLUGIN_DIR=""
 if [ -n "$CLAUDE_PLUGIN_ROOT" ]; then
     PLUGIN_DIR="$CLAUDE_PLUGIN_ROOT"
 else
-    for dir in "$HOME/.claude/plugins/mempalace" "$(pwd)"; do
-        if [ -f "$dir/mempalace_plugin/cli.py" ]; then
+    for dir in "$HOME/.claude/plugins/claude-retain" "$(pwd)"; do
+        if [ -f "$dir/claude_retain/cli.py" ]; then
             PLUGIN_DIR="$dir"
             break
         fi
@@ -18,15 +21,15 @@ fi
 INPUT_TEXT=$(cat)
 [ -z "$INPUT_TEXT" ] && exit 0
 
-TOOL_NAME=$(echo "$INPUT_TEXT" | python3 -c "import sys, json; d=json.load(sys.stdin); print(d.get('tool_name',''))" 2>/dev/null)
+TOOL_NAME=$(echo "$INPUT_TEXT" | $PYTHON -c "import sys, json; d=json.load(sys.stdin); print(d.get('tool_name',''))" 2>/dev/null)
 [ "$TOOL_NAME" != "Read" ] && exit 0
 
-FILE_PATH=$(echo "$INPUT_TEXT" | python3 -c "import sys, json; d=json.load(sys.stdin); print(d.get('input',{}).get('file_path',''))" 2>/dev/null)
+FILE_PATH=$(echo "$INPUT_TEXT" | $PYTHON -c "import sys, json; d=json.load(sys.stdin); print(d.get('input',{}).get('file_path',''))" 2>/dev/null)
 [ -z "$FILE_PATH" ] && exit 0
 
 CURRENT_PROJECT="$(pwd)"
 
-python3 -c "
+$PYTHON -c "
 import sys, os, json
 
 project_root = r'$CURRENT_PROJECT'
@@ -48,25 +51,25 @@ except Exception:
 # Actualizar graph del proyecto
 try:
     sys.path.insert(0, r'$PLUGIN_DIR')
-    from mempalace_plugin.project_graph import ProjectGraphManager
+    from claude_retain.project_graph import ProjectGraphManager
     pm = ProjectGraphManager(project_root)
     result = pm.incremental_update([rel])
-    print(f'GRAPH_UPDATE: edges={result[\"edges_updated\"]}, nodes={result[\"nodes_created\"]}')
+    print(f'GRAPH_UPDATE: edges={result["edges_updated"]}, nodes={result["nodes_created"]}')
     pm.close()
 except Exception as e:
     # Si incremental_update falla, reconstruir todo
     try:
         pm2 = ProjectGraphManager(project_root)
         result2 = pm2.build_graph()
-        print(f'BUILT: nodes={result2[\"nodes_created\"]}, edges={result2[\"edges_created\"]}')
+        print(f'BUILT: nodes={result2["nodes_created"]}, edges={result2["edges_created"]}')
         pm2.close()
     except Exception as e2:
         print(f'GRAPH_ERROR: {e2}')
 " 2>/dev/null | while IFS= read -r line; do
     case "$line" in
-        LARGE_FILE:*) echo "[mempalace] PostRead: $line" >&2 ;;
-        GRAPH_UPDATE:*) echo "[mempalace] PostRead: Graph actualizado — $line" >&2 ;;
-        BUILT:*) echo "[mempalace] PostRead: Graph construido — $line" >&2 ;;
-        GRAPH_ERROR:*) echo "[mempalace] PostRead error: $line" >&2 ;;
+        LARGE_FILE:*) echo "[claude-retain] PostRead: $line" >&2 ;;
+        GRAPH_UPDATE:*) echo "[claude-retain] PostRead: Graph actualizado — $line" >&2 ;;
+        BUILT:*) echo "[claude-retain] PostRead: Graph construido — $line" >&2 ;;
+        GRAPH_ERROR:*) echo "[claude-retain] PostRead error: $line" >&2 ;;
     esac
 done

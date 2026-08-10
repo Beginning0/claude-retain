@@ -1,6 +1,9 @@
 #!/bin/bash
 # Hook Stop — Limpieza al terminar una respuesta (limpiar entradas expiradas del cache)
 
+# Fallback: python3 -> python
+PYTHON=$(command -v python3 || command -v python)
+
 PLUGIN_DIR=""
 if [ -n "${CLAUDE_PLUGIN_ROOT}" ]; then
     PLUGIN_DIR="${CLAUDE_PLUGIN_ROOT}"
@@ -8,9 +11,9 @@ elif [ -d "$PWD/.claude-plugin" ]; then
     PLUGIN_DIR="$PWD"
 else
     for dir in \
-        "$HOME/.claude/plugins/mempalace" \
+        "$HOME/.claude/plugins/claude-retain" \
         "${CLAUDE_PLUGIN_ROOT:-.}"; do
-        if [ -d "$dir" ] && [ -f "$dir/mempalace_plugin/cli.py" ]; then
+        if [ -d "$dir" ] && [ -f "$dir/claude_retain/cli.py" ]; then
             PLUGIN_DIR="$dir"
             break
         fi
@@ -21,10 +24,10 @@ if [ -z "$PLUGIN_DIR" ]; then
     exit 0
 fi
 
-CACHE_PATH="$HOME/.mempalace/llm_cache.db"
+CACHE_PATH="$HOME/.claude-retain/llm_cache.db"
 
 # Limpiar entradas expiradas del cache al final de cada respuesta
-python3 -c "
+$PYTHON -c "
 import sqlite3, time
 db_path = '$CACHE_PATH'
 if __import__('os').path.exists(db_path):
@@ -34,6 +37,6 @@ if __import__('os').path.exists(db_path):
     total = conn.execute('SELECT COUNT(*) FROM llm_cache').fetchone()[0]
     conn.commit()
     if deleted.rowcount > 0:
-        print(f'[mempalace] LLM Cache - {deleted.rowcount} entradas expiradas eliminadas, {total} restantes')
+        print(f'[claude-retain] LLM Cache - {deleted.rowcount} entradas expiradas eliminadas, {total} restantes')
     conn.close()
 " 2>/dev/null
