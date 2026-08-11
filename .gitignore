@@ -24,3 +24,7 @@ Thumbs.db
 log.txt
 # Local reference files (not for sharing)
 INSTALL.md
+
+# Marketplace manifest (subir manualmente cuando esté listo)
+.claude-plugin/marketplace.json
+.claude-plugin/plugin.local.json.bak
