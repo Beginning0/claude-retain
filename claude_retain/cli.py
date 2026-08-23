@@ -1,4 +1,4 @@
-﻿"""CLI entry point para el plugin claude-retain + LLM Cache."""
+"""CLI entry point para el plugin claude-retain + LLM Cache."""
 
 import sys
 import os
@@ -7,6 +7,15 @@ from pathlib import Path
 # Agregar directorio del plugin al path
 PLUGIN_DIR = Path(__file__).parent.parent
 sys.path.insert(0, str(PLUGIN_DIR))
+
+# Windows: la consola usa cp1252 por defecto y crashea con BOM/unicode en los drawers.
+# Forzar UTF-8 reemplazando caracteres no soportados (fix bug encoding).
+if os.name == 'nt':
+    for _stream in (sys.stdout, sys.stderr):
+        try:
+            _stream.reconfigure(encoding='utf-8', errors='replace')
+        except Exception:
+            pass
 
 def main():
     if len(sys.argv) < 2:
