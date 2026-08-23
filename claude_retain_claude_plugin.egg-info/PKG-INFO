@@ -1,9 +1,12 @@
 Metadata-Version: 2.4
 Name: claude-retain-claude-plugin
-Version: 0.1.1
-Summary: Memoria persistente con 4 capas y cache de respuestas LLM para Claude Code
+Version: 0.1.2
+Summary: Memoria persistente con 4 capas y cache de respuestas LLM para Claude Code — plugin.json corregido: commands + agents + hooks
 Author: Shado Terro
 Requires-Python: >=3.9
+License-File: LICENSE
 Requires-Dist: chromadb
+Requires-Dist: sentence-transformers
 Requires-Dist: llama-cpp-python
 Requires-Dist: mempalace
+Dynamic: license-file

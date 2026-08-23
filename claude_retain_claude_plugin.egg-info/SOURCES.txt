@@ -1,3 +1,4 @@
+LICENSE
 README.md
 pyproject.toml
 auto_permission/__init__.py
@@ -6,10 +7,15 @@ claude_retain/__init__.py
 claude_retain/__main__.py
 claude_retain/checkpoints.py
 claude_retain/cli.py
+claude_retain/entity_detector.py
 claude_retain/graph_query.py
+claude_retain/knowledge_graph.py
+claude_retain/layers.py
 claude_retain/mcp_server.py
 claude_retain/memory.py
+claude_retain/palace.py
 claude_retain/project_graph.py
+claude_retain/searcher.py
 claude_retain/wal.py
 claude_retain_claude_plugin.egg-info/PKG-INFO
 claude_retain_claude_plugin.egg-info/SOURCES.txt
