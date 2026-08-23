@@ -6,7 +6,7 @@ Este repo es **claude-retain**: plugin de memoria persistente (4 capas L0-L3, BM
 
 Antes de empezar a trabajar en cualquier proyecto de esta máquina, el agente DEBE consultar la memoria persistente y guardar lo importante al terminar:
 
-- Instrucciones completas: `skills/codex-integration/SKILL.md` (lee este archivo si tu agente soporta skills).
+- Instrucciones completas: `skills/claude-retain-integration/SKILL.md` (lee este archivo si tu agente soporta skills).
 - Clon local: `H:\Nueva carpeta\claude-retain` (esta carpeta). Datos en `~/.claude-retain/`.
 
 ```powershell

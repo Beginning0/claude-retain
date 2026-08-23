@@ -1,16 +1,18 @@
 ---
-name: codex-integration
+name: claude-retain-integration
 description: How to use claude-retain persistent memory from Codex or any other CLI agent — search past context at session start, save decisions/learnings at milestones, checkpoints for risky work. Use when starting work in a known project, resuming a previous conversation, or finishing an important task on this machine.
 ---
 
-# codex-integration (memoria persistente para agentes)
+# claude-retain-integration (memoria persistente para cualquier agente)
 
 claude-retain guarda memoria entre sesiones en `~/.claude-retain/` (Windows: `C:\Users\<usuario>\.claude-retain`). Funciona desde cualquier agente vía CLI Python — no requiere MCP ni hooks de Claude Code.
 
 ## Ubicación del clon
 
-- Máquina actual (Shado Terro, Windows): `H:\Nueva carpeta\claude-retain`
-- Si el clon no existe: `git clone https://github.com/Beginning0/claude-retain <dir>` y copiar esta skill a la carpeta de skills del agente.
+- El clon puede estar en CUALQUIER ruta. Si no existe:
+  `git clone https://github.com/Beginning0/claude-retain <ruta-a-tu-clon>`
+  y copia esta skill en la carpeta de skills del agente.
+- Trabaja SIEMPRE desde esa carpeta: entra a ella (`cd <ruta-a-tu-clon>`) antes de correr los comandos.
 
 ## REGLA DE USO AUTOMÁTICO (no opcional)
 
@@ -21,11 +23,14 @@ claude-retain guarda memoria entre sesiones en `~/.claude-retain/` (Windows: `C:
 3. **Trabajo riesgoso** (refactor grande, migración, borrados) → crear checkpoint antes; `rewind` SOLO con confirmación explícita del usuario.
 4. **No abusar**: 1 búsqueda al inicio + 1 guardado por hito. Cada llamada cuesta ~2-10 s (carga de embeddings). En sesiones triviales (preguntas simples, sin proyecto) no usar.
 
-## Comandos (Windows / PowerShell — ejecutar SIEMPRE desde el clon)
+## Comandos (ejecutar desde la carpeta del clon — funciona en PowerShell y Bash)
 
 ```powershell
+# Ve a la carpeta del clon una sola vez (PowerShell o Bash):
+cd <ruta-a-tu-clon>
+
 # Estado general (capas L0-L3, grafo, cache)
-Set-Location "H:\Nueva carpeta\claude-retain"; python -m claude_retain stats
+python -m claude_retain stats
 
 # Buscar en memoria (BM25 + embeddings). Siempre antes de preguntar por contexto pasado.
 python -m claude_retain search "<consulta>"
