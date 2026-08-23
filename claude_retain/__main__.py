@@ -49,7 +49,7 @@ def main():
 
     # Comandos del CLI (no módulos)
     cli_commands = {
-        "stats", "search", "layers", "graph", "llm-cache-stats", "llm-cache-clear",
+        "stats", "search", "save", "layers", "graph", "llm-cache-stats", "llm-cache-clear",
         "build-graph", "scope-checker", "checkpoints", "rewind", "branch", "replay",
         "delete-checkpoint",
     }

@@ -20,7 +20,7 @@ if os.name == 'nt':
 def main():
     if len(sys.argv) < 2:
         print("Uso: python -m claude_retain <comando>")
-        print("Comandos: stats, search, layers, graph, llm-cache-stats, llm-cache-clear, build-graph, scope-checker, checkpoints, rewind, branch, replay, delete-checkpoint")
+        print("Comandos: stats, search, save, layers, graph, llm-cache-stats, llm-cache-clear, build-graph, scope-checker, checkpoints, rewind, branch, replay, delete-checkpoint")
         return
 
     cmd = sys.argv[1]
@@ -30,6 +30,8 @@ def main():
     elif cmd == "search":
         query = " ".join(sys.argv[2:]) if len(sys.argv) > 2 else ""
         search_memories(query)
+    elif cmd == "save":
+        save_memory_cli()
     elif cmd == "layers":
         show_layers()
     elif cmd == "graph":
@@ -66,7 +68,49 @@ def main():
         delete_checkpoint(checkpoint_id)
     else:
         print(f"Comando desconocido: {cmd}")
-        print("Comandos: stats, search, layers, graph, llm-cache-stats, llm-cache-clear, build-graph, scope-checker, checkpoints, rewind, branch, replay, delete-checkpoint")
+        print("Comandos: stats, search, save, layers, graph, llm-cache-stats, llm-cache-clear, build-graph, scope-checker, checkpoints, rewind, branch, replay, delete-checkpoint")
+
+def save_memory_cli():
+    """Guardar una memoria desde cualquier carpeta (sin Set-Location al plugin).
+
+    Uso:
+      python -m claude_retain save --wing <proyecto> --room <tema> "texto"
+      python -m claude_retain save --wing <proyecto> --room <tema> --stdin   # texto por stdin (UTF-8)
+    """
+    args = sys.argv[2:]
+    wing, room, content, use_stdin = "general", "general", None, False
+    i = 0
+    while i < len(args):
+        a = args[i]
+        if a == "--wing" and i + 1 < len(args):
+            wing = args[i + 1]; i += 2; continue
+        if a.startswith("--wing="):
+            wing = a.split("=", 1)[1]; i += 1; continue
+        if a == "--room" and i + 1 < len(args):
+            room = args[i + 1]; i += 2; continue
+        if a.startswith("--room="):
+            room = a.split("=", 1)[1]; i += 1; continue
+        if a in ("--stdin", "-"):
+            use_stdin = True; i += 1; continue
+        content = a; i += 1
+    if use_stdin:
+        _raw = sys.stdin.buffer.read()
+        for enc in ("utf-8-sig", "cp1252"):
+            try:
+                content = _raw.decode(enc)
+                break
+            except (UnicodeDecodeError, LookupError):
+                continue
+    if not content or not content.strip():
+        print('Uso: python -m claude_retain save --wing <proyecto> --room <tema> "texto"')
+        return
+    from claude_retain.memory import MemoryManager
+    mm = MemoryManager()
+    if not mm.initialize():
+        print("claude-retain no disponible")
+        return
+    ok = mm.save_memory(content=content.strip(), wing=wing, room=room)
+    print(f"save: {ok} (wing={wing}, room={room})")
 
 def show_stats():
     from claude_retain.memory import MemoryManager
