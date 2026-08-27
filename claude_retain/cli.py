@@ -3,6 +3,7 @@
 import sys
 import os
 from pathlib import Path
+from typing import Any, cast
 
 # Agregar directorio del plugin al path
 PLUGIN_DIR = Path(__file__).parent.parent
@@ -13,14 +14,14 @@ sys.path.insert(0, str(PLUGIN_DIR))
 if os.name == 'nt':
     for _stream in (sys.stdout, sys.stderr):
         try:
-            _stream.reconfigure(encoding='utf-8', errors='replace')
+            cast(Any, _stream).reconfigure(encoding='utf-8', errors='replace')
         except Exception:
             pass
 
 def main():
     if len(sys.argv) < 2:
         print("Uso: python -m claude_retain <comando>")
-        print("Comandos: stats, search, save, layers, graph, llm-cache-stats, llm-cache-clear, build-graph, scope-checker, checkpoints, rewind, branch, replay, delete-checkpoint")
+        print("Comandos: stats, search, layers, graph, llm-cache-stats, llm-cache-clear, build-graph, scope-checker, checkpoints, rewind, branch, replay, delete-checkpoint, cleanup")
         return
 
     cmd = sys.argv[1]
@@ -66,9 +67,18 @@ def main():
     elif cmd == "delete-checkpoint":
         checkpoint_id = sys.argv[2] if len(sys.argv) > 2 else None
         delete_checkpoint(checkpoint_id)
+    elif cmd == "cleanup":
+        from claude_retain.project_graph import ProjectGraphManager
+        pm = ProjectGraphManager(os.getcwd())
+        result = pm.cleanup_orphans()
+        pm.close()
+        if result["orphans_removed"]:
+            print(f"[claude-retain] Limpieza de nodos huérfanos: {result['orphans_removed']} eliminados")
+        else:
+            print("[claude-retain] Sin nodos huérfanos")
     else:
         print(f"Comando desconocido: {cmd}")
-        print("Comandos: stats, search, save, layers, graph, llm-cache-stats, llm-cache-clear, build-graph, scope-checker, checkpoints, rewind, branch, replay, delete-checkpoint")
+        print("Comandos: stats, search, layers, graph, llm-cache-stats, llm-cache-clear, build-graph, scope-checker, checkpoints, rewind, branch, replay, delete-checkpoint, cleanup")
 
 def save_memory_cli():
     """Guardar una memoria desde cualquier carpeta (sin Set-Location al plugin).
@@ -111,6 +121,7 @@ def save_memory_cli():
         return
     ok = mm.save_memory(content=content.strip(), wing=wing, room=room)
     print(f"save: {ok} (wing={wing}, room={room})")
+
 
 def show_stats():
     from claude_retain.memory import MemoryManager
@@ -258,7 +269,7 @@ def build_project_graph(files=None, auto=False):
             print(f"  ✓ {f} — {result['edges_updated']} aristas")
     else:
         # Mostrar archivos disponibles y pedir confirmación
-        from claude_retain.project_graph import IGNORED_DIRS, IGNORED_EXTENSIONS
+        from claude_retain.project_graph import IGNORED_DIRS, IGNORED_EXTENSIONS, _get_db_path
 
         all_files = pm._scan_files(project_root)
         if not all_files:
@@ -280,8 +291,8 @@ def build_project_graph(files=None, auto=False):
             print(f"\n  {ext}: {count} archivo(s)")
             print(f"    -> {files_list}")
 
-        # Verificar si el graph ya existe
-        db_path = os.path.expanduser("~/.claude-retain/project_graph.db")
+        # Verificar si el graph ya existe (ruta por proyecto, no fija)
+        db_path = _get_db_path(project_root)
         if os.path.exists(db_path):
             import sqlite3
             try:
@@ -453,7 +464,7 @@ def create_branch(branch_from=None, branch_name=None):
         if not branch_from:
             return
 
-    branch_id = ckpt_mgr.branch(branch_from, branch_name)
+    branch_id = ckpt_mgr.branch(cast(str, branch_from), cast(str, branch_name))
     if branch_id:
         print(f"[Checkpoint] Bifurcación creada: {branch_id}")
     else:

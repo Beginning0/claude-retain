@@ -1,0 +1,6 @@
+# requirements.txt — dependencias versionadas del plugin claude-retain
+# Generado desde el bloque dependencies de pyproject.toml (versiones instaladas).
+chromadb==1.5.5
+sentence-transformers==5.3.0
+llama-cpp-python==0.3.34
+mempalace==3.6.0

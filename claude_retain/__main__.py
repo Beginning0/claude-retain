@@ -51,7 +51,7 @@ def main():
     cli_commands = {
         "stats", "search", "save", "layers", "graph", "llm-cache-stats", "llm-cache-clear",
         "build-graph", "scope-checker", "checkpoints", "rewind", "branch", "replay",
-        "delete-checkpoint",
+        "delete-checkpoint", "cleanup",
     }
 
     if module_name in cli_commands:

@@ -16,9 +16,10 @@ import sys
 import json
 import time
 import hashlib
+import logging
 import sqlite3
 from pathlib import Path
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional, List, Dict, Any
 
 
@@ -64,12 +65,15 @@ PROJECT_SKILL_MAP = {
     "devops": ["fewer-permission-prompts", "update-config", "superpowers:requesting-code-review"],
 }
 
-# Carpetas a ignorar
+# Carpetas a ignorar (incluye código de terceros: evita indexar 19k+ archivos externos)
 IGNORED_DIRS = {
     "node_modules", ".git", "__pycache__", ".tox", ".mypy_cache",
     ".pytest_cache", ".venv", "venv", "env", ".env",
     "dist", "build", "target", "out", "bin", "obj",
     ".next", ".nuxt", ".cache", ".idea", ".vscode",
+    # Terceros / dependencias vendorizadas — ponytail: lista explícita,
+    # añade aquí cualquier carpeta de código ajeno al proyecto.
+    "externals", "vendor", "vendored", "third_party", "third-party", "packages",
 }
 
 # ──────────────────────────────────────────────────────────────────────
@@ -102,6 +106,9 @@ def _init_db(db_path: str) -> sqlite3.Connection:
         pass  # Columna ya existe
 
     conn.execute("PRAGMA journal_mode=WAL")
+    # ponytail: busy_timeout global de 2s bajo contención (hook + comando manual).
+    # Upgrade: lock por proyecto en app si la concurrencia alta causa timeouts.
+    conn.execute("PRAGMA busy_timeout=2000")
     conn.execute("""CREATE TABLE IF NOT EXISTS nodes (
         id TEXT PRIMARY KEY,
         name TEXT NOT NULL,
@@ -183,17 +190,16 @@ class ProjectGraphManager:
         """
         project_root = project_root or self.project_root
         conn = self.ensure_conn()
-        now = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
+        now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
-        # Limpiar graph anterior
+        # Limpiar graph anterior dentro de una transición atómica:
+        # BEGIN cubre vaciado + reinsertión; si falla algo, todo se revierte.
+        conn.execute("BEGIN")
         conn.execute("DELETE FROM edges")
         conn.execute("DELETE FROM nodes")
         conn.execute("DELETE FROM node_stats")
         conn.execute("DELETE FROM project_skills")
         conn.execute("DELETE FROM skill_edges")
-        conn.commit()
-        # Checkpoint WAL to ensure data is visible to other connections
-        conn.execute("PRAGMA wal_checkpoint(TRUNCATE)")
 
         # Descubrir skills instaladas del usuario
         skills = self._discover_skills(project_root)
@@ -213,23 +219,6 @@ class ProjectGraphManager:
                     conn.execute("""INSERT INTO skill_edges (source_skill, target_node, relation, created_at)
                         VALUES (?, 'ALL_PROJECT', 'recommended_for', ?)""",
                         (skill_name, now))
-
-            # Aristas por tipo de archivo → skill
-            file_type_skill_map = {
-                ".py": ["code-review", "ponytail:ponytail"],
-                ".js": ["code-review", "frontend-design"],
-                ".ts": ["code-review", "frontend-design"],
-                ".jsx": ["frontend-design"],
-                ".tsx": ["frontend-design"],
-                ".css": ["frontend-design"],
-                ".html": ["frontend-design"],
-                ".json": [],
-                ".yml": ["fewer-permission-prompts", "update-config"],
-                ".yaml": ["fewer-permission-prompts", "update-config"],
-                ".toml": ["fewer-permission-prompts"],
-                ".md": ["superpowers:brainstorming"],
-                ".py.test": ["superpowers:test-driven-development"],
-            }
 
         # Escanear archivos
         files = self._scan_files(project_root)
@@ -278,35 +267,15 @@ class ProjectGraphManager:
                     (rel_path, imp, now))
                 edges_created += 1
 
-            # Detectar definiciones de clases/funciones — con AST para Python
-            defs = self._detect_definitions(fpath)
-            for ref in defs:
-                conn.execute("""INSERT OR IGNORE INTO nodes
-                    (id, name, type, summary, created_at, updated_at)
-                    VALUES (?, ?, 'definition', '', ?, ?)""",
-                    (ref, ref, now, now))
-                conn.execute("""INSERT INTO edges (source, target, relation, created_at)
-                    VALUES (?, ?, 'defines', ?)""",
-                    (rel_path, ref, now))
-                edges_created += 1
-
-            # Detectar relaciones de herencia (extends) — solo para Python
-            if ext == ".py":
-                extends = self._detect_inheritance(fpath, project_root)
-                for src, tgt in extends:
-                    conn.execute("""INSERT OR IGNORE INTO nodes
-                        (id, name, type, summary, created_at, updated_at)
-                        VALUES (?, ?, 'module', '', ?, ?)""",
-                        (tgt, tgt, now, now))
-                    conn.execute("""INSERT OR REPLACE INTO edges
-                        (source, target, relation, created_at)
-                        VALUES (?, ?, 'extends', ?)""",
-                        (src, tgt, now))
-                    edges_created += 1
+            # Definiciones + herencia — lógica centralizada (_index_definitions_and_inheritance)
+            edges_created += self._index_definitions_and_inheritance(conn, fpath, rel_path, project_root, now)
 
         # Registrar consultas previas para este proyecto
         self._record_query(project_root, "build_graph")
 
+        # Confirmar toda la reconstrucción de golpe (atómico) y vaciar el WAL
+        conn.commit()
+        conn.execute("PRAGMA wal_checkpoint(TRUNCATE)")
         return {"nodes_created": nodes_created, "edges_created": edges_created}
 
     # ──────── incremental_update — actualización por cambios ────────
@@ -320,7 +289,7 @@ class ProjectGraphManager:
         """
         project_root = project_root or self.project_root
         conn = self.ensure_conn()
-        now = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
+        now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
         # Eliminar aristas viejas de estos archivos
         placeholders = ",".join("?" for _ in changed_files)
@@ -331,6 +300,12 @@ class ProjectGraphManager:
         for rel_path in changed_files:
             fpath = os.path.join(project_root, rel_path)
             if not os.path.isfile(fpath):
+                # ponytail: el archivo fue renombrado/movido/eliminado. Limpia su
+                # nodo huérfano (solo tipo 'file'; definicion/modulo tienen otro id).
+                conn.execute(
+                    "DELETE FROM edges WHERE source = ? OR target = ?", (rel_path, rel_path))
+                conn.execute(
+                    "DELETE FROM nodes WHERE id = ? AND type = 'file'", (rel_path,))
                 continue
 
             # Phase 4: Solo reconstruir si el hash cambió
@@ -351,48 +326,78 @@ class ProjectGraphManager:
             # Actualizar aristas — con AST para Python
             imports = self._detect_imports(fpath, project_root)
             for imp in imports:
-                conn.execute("""INSERT OR IGNORE INTO nodes
-                    (id, name, type, summary, created_at, updated_at)
-                    VALUES (?, ?, 'module', '', ?, ?)""",
-                    (imp, imp, now, now))
+                # ponytail: solo arista 'imports'; sin nodo 'module' (igual que build_graph).
+                # Crear el nodo aquí diverge del build completo y dejaría estados distintos.
                 conn.execute("""INSERT OR REPLACE INTO edges
                     (source, target, relation, created_at)
                     VALUES (?, ?, 'imports', ?)""",
                     (rel_path, imp, now))
                 edges_created += 1
 
-            # Definiciones — con AST para Python
-            defs = self._detect_definitions(fpath)
-            for ref in defs:
-                conn.execute("""INSERT OR IGNORE INTO nodes
-                    (id, name, type, summary, created_at, updated_at)
-                    VALUES (?, ?, 'definition', '', ?, ?)""",
-                    (ref, ref, now, now))
-                conn.execute("""INSERT OR REPLACE INTO edges
-                    (source, target, relation, created_at)
-                    VALUES (?, ?, 'defines', ?)""",
-                    (rel_path, ref, now))
-                edges_created += 1
-
-            # Herencia — solo para Python
-            ext = Path(fpath).suffix.lower()
-            if ext == ".py":
-                extends = self._detect_inheritance(fpath, project_root)
-                for src, tgt in extends:
-                    conn.execute("""INSERT OR IGNORE INTO nodes
-                        (id, name, type, summary, created_at, updated_at)
-                        VALUES (?, ?, 'module', '', ?, ?)""",
-                        (tgt, tgt, now, now))
-                    conn.execute("""INSERT OR REPLACE INTO edges
-                        (source, target, relation, created_at)
-                        VALUES (?, ?, 'extends', ?)""",
-                        (src, tgt, now))
-                    edges_created += 1
+            # Definiciones + herencia — lógica centralizada (_index_definitions_and_inheritance)
+            edges_created += self._index_definitions_and_inheritance(conn, fpath, rel_path, project_root, now)
 
         conn.commit()
         # Checkpoint WAL to ensure data is visible to other connections
         conn.execute("PRAGMA wal_checkpoint(TRUNCATE)")
         return {"edges_updated": edges_created}
+
+    def cleanup_orphans(self, project_root: str = None) -> Dict[str, int]:
+        """Elimina nodos de tipo 'file' cuya ruta ya no existe en disco.
+
+        Se produce al renombrar/mover/eliminar archivos ya indexados. Solo toca
+        nodos 'file' (ids con prefijo de ruta); los de definicion/modulo tienen
+        otro formato de id y no se ven afectados. No corre en el path crítico:
+        invocalo explicitamente (subcomando `cleanup`).
+        """
+        project_root = project_root or self.project_root
+        conn = self.ensure_conn()
+        rows = conn.execute("SELECT id FROM nodes WHERE type = 'file'").fetchall()
+        removed = 0
+        for (rel_path,) in rows:
+            if not os.path.isfile(os.path.join(project_root, rel_path)):
+                conn.execute(
+                    "DELETE FROM edges WHERE source = ? OR target = ?", (rel_path, rel_path))
+                conn.execute("DELETE FROM nodes WHERE id = ?", (rel_path,))
+                removed += 1
+        if removed:
+            conn.commit()
+            conn.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+        return {"orphans_removed": removed}
+
+    def _index_definitions_and_inheritance(self, conn, fpath, rel_path, project_root, now) -> int:
+        """Indexa definiciones (id con scope de archivo) y herencia (extends) de un archivo.
+
+        Parte idéntica entre build_graph e incremental_update — centralizada para
+        que no diverja al editar una sola. Devuelve el nº de aristas creadas.
+        """
+        edges = 0
+        defs = self._detect_definitions(fpath)
+        for ref in defs:
+            # id con scope de archivo: dos archivos que definan `save()` no colisionan
+            def_id = f"{rel_path}:{ref}"
+            conn.execute("""INSERT OR IGNORE INTO nodes
+                (id, name, type, summary, created_at, updated_at)
+                VALUES (?, ?, 'definition', '', ?, ?)""",
+                (def_id, ref, now, now))
+            conn.execute("""INSERT OR REPLACE INTO edges (source, target, relation, created_at)
+                VALUES (?, ?, 'defines', ?)""",
+                (rel_path, def_id, now))
+            edges += 1
+
+        if Path(fpath).suffix.lower() == ".py":
+            extends = self._detect_inheritance(fpath, project_root)
+            for src, tgt in extends:
+                conn.execute("""INSERT OR IGNORE INTO nodes
+                    (id, name, type, summary, created_at, updated_at)
+                    VALUES (?, ?, 'module', '', ?, ?)""",
+                    (tgt, tgt, now, now))
+                conn.execute("""INSERT OR REPLACE INTO edges
+                    (source, target, relation, created_at)
+                    VALUES (?, ?, 'extends', ?)""",
+                    (src, tgt, now))
+                edges += 1
+        return edges
 
     # ──────── query_semantic — ChromaDB ────────
 
@@ -424,7 +429,9 @@ class ProjectGraphManager:
                 col.delete(ids=ids)
 
         except Exception:
-            pass  # Error al verificar — proceder a indexar
+            # Chroma falló al verificar (no es "no configurado", que se calla arriba).
+            # Reportar pero seguir intentando indexar.
+            logging.warning("claude-retain: no se pudo verificar el índice ChromaDB; se intentará indexar")
 
         # Indexar archivos del proyecto en ChromaDB
         try:
@@ -456,6 +463,7 @@ class ProjectGraphManager:
                 return True
             return False
         except Exception:
+            logging.warning("claude-retain: falló la indexación semántica en ChromaDB")
             return False
 
     def query_semantic(self, query: str, n_results: int = 5) -> List[Dict]:
@@ -589,7 +597,7 @@ class ProjectGraphManager:
         # Regla 1: nodos totales
         total_nodes = conn.execute("SELECT COUNT(*) FROM nodes").fetchone()[0]
         if total_nodes > NODE_COMPACT_THRESHOLD:
-            stale_time = (datetime.utcnow() - timedelta(hours=STALE_QUERY_WINDOW)).strftime("%Y-%m-%dT%H:%M:%S") + "Z"
+            stale_time = (datetime.now(timezone.utc) - timedelta(hours=STALE_QUERY_WINDOW)).strftime("%Y-%m-%dT%H:%M:%S") + "Z"
             stale_nodes = conn.execute(
                 "SELECT node_id FROM node_stats WHERE query_count = 0 AND last_query < ?",
                 (stale_time,)
@@ -614,7 +622,7 @@ class ProjectGraphManager:
             pass
 
         # Regla 3: nodos sin cambios recientes
-        recent_threshold = (datetime.utcnow() - timedelta(hours=72)).strftime("%Y-%m-%dT%H:%M:%SZ")
+        recent_threshold = (datetime.now(timezone.utc) - timedelta(hours=72)).strftime("%Y-%m-%dT%H:%M:%SZ")
         no_changes = conn.execute(
             "SELECT id FROM nodes WHERE updated_at < ?", (recent_threshold,)
         ).fetchall()
@@ -639,7 +647,7 @@ class ProjectGraphManager:
         compacted = {"stale_nodes_moved": 0, "index_summarized": False}
 
         # Mover nodos obsoletos a compacted/
-        stale_time = (datetime.utcnow() - timedelta(hours=STALE_QUERY_WINDOW)).strftime("%Y-%m-%dT%H:%M:%S") + "Z"
+        stale_time = (datetime.now(timezone.utc) - timedelta(hours=STALE_QUERY_WINDOW)).strftime("%Y-%m-%dT%H:%M:%S") + "Z"
         stale_nodes = conn.execute(
             "SELECT node_id FROM node_stats WHERE query_count = 0 AND last_query < ?",
             (stale_time,)
@@ -688,7 +696,7 @@ class ProjectGraphManager:
 
         # Registrar en log
         log_entry = {
-            "timestamp": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
             "node": node_name,
             "type": query_type,
         }
@@ -698,7 +706,7 @@ class ProjectGraphManager:
         # Actualizar stats del nodo
         if node_name:
             conn = self.ensure_conn()
-            now = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
+            now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
             conn.execute("""INSERT OR REPLACE INTO node_stats
                 (node_id, query_count, last_query)
                 VALUES (?, 1, ?)""", (node_name, now))
@@ -793,14 +801,19 @@ class ProjectGraphManager:
             if ext == ".py":
                 return self._detect_python_imports(file_path, project_root)
 
-            # JS/TS — mantener regex (funciona bien para ESM/CommonJS)
+            # JS/TS — regex para ESM/CommonJS.
+            # ponytail: sin parser externo (esbuild) para no añadir dep;
+            # cubre require, import default/named/type/side-effect y dynamic import().
             imports = []
             with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
                 content = f.read(10000)
-            for match in re.finditer(r"require\s*\(\s*['\"](\.\.?\/[^'\"]+)['\"]\s*\)", content):
-                imports.append(match.group(1))
-            for match in re.finditer(r"import\s+.*\s+from\s+['\"](\.\.?\/[^'\"]+)['\"]", content):
-                imports.append(match.group(1))
+            for pat in (
+                r"require\s*\(\s*['\"](\.\.?\/[^'\"]+)['\"]\s*\)",
+                r"import\s+(?:[^\n]*?\s+from\s+)?['\"](\.\.?\/[^'\"]+)['\"]",
+                r"import\s*\(\s*['\"](\.\.?\/[^'\"]+)['\"]\s*\)",
+            ):
+                for m in re.finditer(pat, content):
+                    imports.append(m.group(1))
             return list(set(imports))
         except Exception:
             return []
@@ -964,14 +977,6 @@ class ProjectGraphManager:
             return list(defs)
         except Exception:
             return []
-
-    def _detect_cross_refs(self, file_path: str, project_root: str) -> List[str]:
-        """Detecta referencias cruzadas a funciones/classes de otros archivos.
-
-        DEPRECATED — usar _detect_definitions en su lugar.
-        Mantenida por compatibilidad con llamadas existentes.
-        """
-        return self._detect_definitions(file_path)
 
     def _resolve_import(self, module_name: str, current_dir: str, project_root: str) -> Optional[str]:
         """Intenta resolver un import a una ruta relativa del proyecto.
@@ -1418,6 +1423,9 @@ def main():
     # compact
     subparsers.add_parser("compact", help="Compactar manualmente el graph")
 
+    # cleanup
+    subparsers.add_parser("cleanup", help="Eliminar nodos huérfanos (archivos renombrados/eliminados)")
+
     # blast_radius (Phase 4)
     sub = subparsers.add_parser("blast_radius", help="Análisis de blast-radius (qué nodos afectan cambios)")
     sub.add_argument("node", help="Nombre del nodo/archivo a analizar")
@@ -1617,6 +1625,13 @@ def main():
             print(f"  Nodos movidos a compacted/: {compacted['stale_nodes_moved']}")
             print(f"  Index resumido: {compacted['index_summarized']}")
 
+        elif args.command == "cleanup":
+            result = pm.cleanup_orphans()
+            if result["orphans_removed"]:
+                print(f"[claude-retain] Limpieza de nodos huérfanos: {result['orphans_removed']} eliminados")
+            else:
+                print("[claude-retain] Sin nodos huérfanos")
+
         elif args.command == "build_graph":
             if args.files:
                 result = pm.incremental_update(args.files, args.project_root)
@@ -1644,7 +1659,7 @@ def main():
                     print(f"\n  {ext}: {count} archivo(s)")
                     print(f"    -> {files_list}")
 
-                db_path = os.path.expanduser("~/.claude-retain/project_graph.db")
+                db_path = _get_db_path(args.project_root)
                 if os.path.exists(db_path):
                     import sqlite3
                     try:
