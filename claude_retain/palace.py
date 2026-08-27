@@ -44,14 +44,25 @@ class PalaceCollection:
         except Exception:
             pass  # Colección no existe — crearla
 
-        # Crear nueva colección con sentence-transformers (mejor calidad que BGE)
+        # Crear nueva colección con sentence-transformers (mejor calidad que BGE).
+        # Chroma 1.x exige un EmbeddingFunction (objeto con __call__(self, input)):
+        # un lambda da "Expected EmbeddingFunction.__call__ ... args, kwargs".
         try:
             from sentence_transformers import SentenceTransformer
-            self._embedding_fn = SentenceTransformer("all-MiniLM-L6-v2")
+            from chromadb.api.types import EmbeddingFunction as _EF
+
+            class _STEmbedder(_EF):
+                def __init__(self, model_name: str) -> None:
+                    self._model = SentenceTransformer(model_name)
+
+                def __call__(self, input: list) -> list:
+                    return self._model.encode(list(input)).tolist()
+
+            self._embedding_fn = _STEmbedder("all-MiniLM-L6-v2")
 
             self._collection = client.create_collection(
                 name=self.collection_name,
-                embedding_function=lambda x: self._embedding_fn.encode(x).tolist(),
+                embedding_function=self._embedding_fn,
                 metadata={"hnsw:space": "cosine"},
             )
         except ImportError:
