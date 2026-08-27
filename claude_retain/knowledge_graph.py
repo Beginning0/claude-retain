@@ -50,7 +50,14 @@ class KnowledgeGraph:
 
     def add_triple(self, subject: str, predicate: str, obj: str,
                    valid_from: str = None, confidence: float = 1.0) -> bool:
-        """Agregar un triple al grafo."""
+        """Agregar un triple al grafo. Idempotente: no duplica (subject,predicate,object)."""
+        # Dedupe barato: evita que el grafo se infele con triples repetidos.
+        existing = self.conn.execute(
+            "SELECT 1 FROM triples WHERE subject=? AND predicate=? AND object=? LIMIT 1",
+            (subject, predicate, obj),
+        ).fetchone()
+        if existing:
+            return True
         now = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
         try:
             self.conn.execute(
@@ -76,7 +83,7 @@ class KnowledgeGraph:
             ]
 
         conditions = []
-        params = [entity]
+        params: list = []
         if direction in ("incoming", "both"):
             conditions.append("subject = ?")
             params.append(entity)
@@ -94,6 +101,32 @@ class KnowledgeGraph:
         rows = self.conn.execute(
             f"SELECT * FROM triples WHERE {where_clause}", params).fetchall()
 
+        return [
+            {
+                "subject": r[1], "predicate": r[2], "object": r[3],
+                "valid_from": r[4], "valid_to": r[5],
+                "confidence": r[6] if len(r) > 6 else 1.0,
+            }
+            for r in rows
+        ]
+
+    def search_terms(self, terms: str, limit: int = 20) -> List[Dict]:
+        """Buscar triples por palabras clave en subject/predicate/object (barato, LIKE)."""
+        words = [w.strip().lower() for w in terms.split() if w.strip()]
+        if not words:
+            return []
+        clauses = []
+        params: list = []
+        for w in words:
+            # TODAS las palabras deben aparecer (AND) en cualquier columna.
+            clause = f"(LOWER(subject) LIKE ? OR LOWER(predicate) LIKE ? OR LOWER(object) LIKE ?)"
+            like = f"%{w}%"
+            clauses.append(clause)
+            params.extend([like, like, like])
+        where = " AND ".join(clauses)
+        rows = self.conn.execute(
+            f"SELECT * FROM triples WHERE {where} LIMIT {limit}", params
+        ).fetchall()
         return [
             {
                 "subject": r[1], "predicate": r[2], "object": r[3],

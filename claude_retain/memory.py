@@ -125,9 +125,28 @@ class MemoryManager:
             )
             if not results or "error" in results:
                 return []
+
+            # Fusionar triples del grafo (propósito/pasos) con los hits de memoria.
+            kg_triples = self.kg.search_terms(query, limit=n_results * 3) if self.kg else []
+            all_hits = list(results.get("hits", []))
+            seen_texts = {h["text"] for h in all_hits if h.get("text")}
+            for t in kg_triples:
+                text = f"{t['subject']} --{t['predicate']}--> {t['object']}"
+                if text in seen_texts:
+                    continue
+                seen_texts.add(text)
+                all_hits.append({
+                    "similarity": t.get("confidence", 1.0),
+                    "source_file": "knowledge-graph",
+                    "wing": t["subject"],
+                    "room": t["predicate"],
+                    "text": text,
+                    "matched_via": "knowledge-graph",
+                })
+
             # Formatear resultados para Claude Code
             formatted = []
-            for hit in results.get("hits", []):
+            for hit in all_hits:
                 formatted.append({
                     "similarity": hit.get("similarity", 0),
                     "source": hit.get("source_file", "?"),
@@ -183,6 +202,11 @@ class MemoryManager:
                 "importance": importance,
                 "normalize_version": 2,
             }
+
+            # Captura automática al grafo: mapea tema→aspecto activo. Se hace ANTES
+            # del save en Chroma para que ocurra aunque el fallo de embeddings bloquee
+            # el guardado de la memoria (captura independiente del L2). Idempotente.
+            self.add_knowledge_triple(wing, "has-aspect", room)
 
             # Agregar operación al WAL
             if self.wal and tx_id:

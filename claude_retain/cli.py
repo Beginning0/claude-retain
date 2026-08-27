@@ -21,7 +21,7 @@ if os.name == 'nt':
 def main():
     if len(sys.argv) < 2:
         print("Uso: python -m claude_retain <comando>")
-        print("Comandos: stats, search, layers, graph, llm-cache-stats, llm-cache-clear, build-graph, scope-checker, checkpoints, rewind, branch, replay, delete-checkpoint, cleanup")
+        print("Comandos: stats, search, layers, graph, add-triple, llm-cache-stats, llm-cache-clear, build-graph, scope-checker, checkpoints, rewind, branch, replay, delete-checkpoint, cleanup")
         return
 
     cmd = sys.argv[1]
@@ -38,6 +38,8 @@ def main():
     elif cmd == "graph":
         entity = sys.argv[2] if len(sys.argv) > 2 else None
         show_graph(entity)
+    elif cmd == "add-triple":
+        add_triple_cli()
     elif cmd == "llm-cache-stats":
         show_llm_cache_stats()
     elif cmd == "llm-cache-clear":
@@ -78,7 +80,7 @@ def main():
             print("[claude-retain] Sin nodos huérfanos")
     else:
         print(f"Comando desconocido: {cmd}")
-        print("Comandos: stats, search, layers, graph, llm-cache-stats, llm-cache-clear, build-graph, scope-checker, checkpoints, rewind, branch, replay, delete-checkpoint, cleanup")
+        print("Comandos: stats, search, layers, graph, add-triple, llm-cache-stats, llm-cache-clear, build-graph, scope-checker, checkpoints, rewind, branch, replay, delete-checkpoint, cleanup")
 
 def save_memory_cli():
     """Guardar una memoria desde cualquier carpeta (sin Set-Location al plugin).
@@ -224,6 +226,53 @@ def show_graph(entity=None):
             if e and e != "ALL":
                 count = sum(1 for t in (all_triples or []) if t.get("subject") == e)
                 print(f"  • {e} ({count} triples)")
+
+def add_triple_cli():
+    """Registrar un triple manual (propósito/pasos) en el grafo de conocimiento.
+
+    Uso:
+      python -m claude_retain add-triple --subject <s> --predicate <p> --object <o> [--confidence c]
+
+    Sirve para fijar el propósito de la tarea y los pasos requeridos:
+      add-triple --subject current-task --predicate goal --object "reparar búsqueda FTS5"
+      add-triple --subject current-task --predicate requires-step --object "corregir searcher.py"
+    """
+    args = sys.argv[2:]
+    subject = predicate = obj = None
+    confidence = 1.0
+    i = 0
+    while i < len(args):
+        a = args[i]
+        if a == "--subject" and i + 1 < len(args):
+            subject = args[i + 1]; i += 2; continue
+        if a.startswith("--subject="):
+            subject = a.split("=", 1)[1]; i += 1; continue
+        if a == "--predicate" and i + 1 < len(args):
+            predicate = args[i + 1]; i += 2; continue
+        if a.startswith("--predicate="):
+            predicate = a.split("=", 1)[1]; i += 1; continue
+        if a == "--object" and i + 1 < len(args):
+            obj = args[i + 1]; i += 2; continue
+        if a.startswith("--object="):
+            obj = a.split("=", 1)[1]; i += 1; continue
+        if a == "--confidence" and i + 1 < len(args):
+            try: confidence = float(args[i + 1])
+            except ValueError: pass
+            i += 2; continue
+        i += 1
+    if not (subject and predicate and obj):
+        print('Uso: python -m claude_retain add-triple --subject <s> --predicate <p> --object <o> [--confidence c]')
+        return
+    from claude_retain.memory import MemoryManager
+    mm = MemoryManager()
+    if not mm.initialize():
+        print("claude-retain no disponible")
+        return
+    ok = mm.add_knowledge_triple(subject, predicate, obj, confidence=confidence)
+    if ok:
+        print(f"[KG] triple guardado: {subject} --{predicate}--> {obj}")
+    else:
+        print(f"[KG] ERROR guardando triple para {subject} --{predicate}--> {obj}")
 
 def show_llm_cache_stats():
     from llm_cache import llm_cache
