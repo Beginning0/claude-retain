@@ -22,9 +22,10 @@ def _ensure_fts_db():
     import sqlite3
     Path(FTS5_DB_PATH).parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(FTS5_DB_PATH)
-    # Tabla principal de documentos (BM25 index)
+    # Tabla principal de documentos (BM25 index). FTS5 no acepta tipos de columna,
+    # solo nombres: fts5(a, b, c). Declarar "a TEXT" lanza OperationalError.
     conn.execute("""CREATE VIRTUAL TABLE IF NOT EXISTS memories_fts
-        USING fts5(content TEXT, wing TEXT, room TEXT, importance REAL, timestamp REAL, source TEXT)""")
+        USING fts5(content, wing, room, importance, timestamp, source)""")
     # Tabla para tracking de documentos (evitar duplicados)
     conn.execute("""CREATE TABLE IF NOT EXISTS document_index (
         id TEXT PRIMARY KEY,
@@ -51,9 +52,9 @@ def index_document(
         conn = _ensure_fts_db()
         now = __import__("datetime").datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
         conn.execute("""INSERT OR REPLACE INTO memories_fts
-            (docid, content, wing, room, importance, timestamp, source)
-            VALUES (?, ?, ?, ?, ?, ?, ?)""",
-            (doc_id, content, wing, room, importance, timestamp or __import__("time").time(), source))
+            (content, wing, room, importance, timestamp, source)
+            VALUES (?, ?, ?, ?, ?, ?)""",
+            (content, wing, room, importance, timestamp or __import__("time").time(), source))
         conn.execute("""INSERT OR REPLACE INTO document_index
             (id, palace_id, indexed_at) VALUES (?, ?, ?)""",
             (doc_id, palace_id or "", now))
@@ -101,12 +102,13 @@ def _search_bm25(query: str, wing: str = None, room: str = None) -> List[Dict]:
         where_clause = ""
         params = []
 
-        # FTS query — usar MATCH para BM25 scoring
-        fts_query = f"'{query}'"
+        # FTS query — usar MATCH para BM25 scoring. Los terminos van sin comillas:
+        # "'x'" da fts5: syntax error; la busqueda por columna es wing:value.
+        fts_query = query
         if wing:
-            fts_query += " AND wing:" + f"'{wing}'"
+            fts_query += f" AND wing:{wing}"
         if room:
-            fts_query += " AND room:" + f"'{room}'"
+            fts_query += f" AND room:{room}"
 
         results = conn.execute(
             f"""SELECT rowid, content, wing, room, importance, timestamp, source
@@ -120,8 +122,9 @@ def _search_bm25(query: str, wing: str = None, room: str = None) -> List[Dict]:
         hits = []
         for r in results:
             # rank de FTS5: más bajo = más relevante
-            # Convertir a score: 1 / (1 + rank)
-            score = 1.0 / (1.0 + abs(r[6] if len(r) > 6 else 0))
+            # Convertir a score: 1 / (1 + rank) — importance es el peso del recuerdo (col 4),
+            # no source (col 6): abs(str) lanzaría TypeError.
+            score = 1.0 / (1.0 + abs(r[4] if len(r) > 4 else 0))
             hits.append({
                 "similarity": round(score, 3),
                 "source_file": r[6] if len(r) > 6 else "",
@@ -129,7 +132,7 @@ def _search_bm25(query: str, wing: str = None, room: str = None) -> List[Dict]:
                 "room": r[3] or "?",
                 "matched_via": "bm25",
                 "text": r[1][:500] if r[1] else "",
-                "bm25_rank": r[6] if len(r) > 6 else 0,
+                "bm25_rank": r[4] if len(r) > 4 else 0,
             })
 
         return hits
